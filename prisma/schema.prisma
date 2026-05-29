@@ -1,0 +1,179 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Building {
+  id          String      @id @default(cuid())
+  houseNumber String      @unique
+  street      String      @default("Starhembergstraße")
+  city        String      @default("Linz")
+  apartments  Apartment[]
+}
+
+model Apartment {
+  id            String    @id @default(cuid())
+  buildingId    String
+  building      Building  @relation(fields: [buildingId], references: [id])
+  topNumber     String
+  floor         String
+  apartmentType String?
+  sizeSqm       Float?
+  sizeSqmPlan   Float?
+  loggiaType    String?
+  loggiaSizeSqm Float?
+  heatingType   String?
+  notes         String?
+  residents     Resident[]
+  windows       Window[]
+  orders        Order[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([buildingId, topNumber])
+}
+
+model Resident {
+  id               String    @id @default(cuid())
+  apartmentId      String
+  apartment        Apartment @relation(fields: [apartmentId], references: [id])
+  role             String    @default("OWNER_PRIMARY")
+  salutation       String?
+  title            String?
+  firstName        String?
+  lastName         String?
+  phone            String?
+  email            String?
+  loginEmail       String?   @unique
+  passwordHash     String?
+  magicLinkToken   String?   @unique
+  magicLinkExpires DateTime?
+  isPrimaryContact Boolean   @default(false)
+  loginEnabled     Boolean   @default(false)
+  lastLoginAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  orders           Order[]
+}
+
+model Window {
+  id                    String      @id @default(cuid())
+  apartmentId           String
+  apartment             Apartment   @relation(fields: [apartmentId], references: [id])
+  windowNumber          String
+  wingType              String
+  location              String
+  widthMm               Int
+  heightMm              Int
+  measureText           String
+  hasExistingSunscreen  Boolean     @default(false)
+  hasElectricSunscreen  Boolean     @default(false)
+  sunscreenInterest     Boolean     @default(false)
+  insectScreenInterest  Boolean     @default(false)
+  wantsElectricSs       Boolean     @default(false)
+  rekordTypeOld         String?
+  rekordTypeNew         String?
+  isOrderable           Boolean     @default(true)
+  
+  // Preisfelder aus Excel V6
+  priceMotorComplete    Float?
+  priceCordComplete     Float?
+  priceCordMaterial     Float?      // Spalte X = Behang mit Gurt
+  priceMotorMaterial    Float?
+  priceMotorSurcharge   Float?      // Aufpreis Motor bei Bestand
+  priceIsgWindow        Float?      // Aufpreis ISG Fenster
+  priceIsgDoor          Float?      // Aufpreis ISG Tür
+  priceReceiver         Float?      // Funkempfänger
+  priceSender15Ch       Float?      // Handsender 15 Kanal
+  priceSender1Ch        Float?      // Handsender 1 Kanal
+  
+  // Verfügbarkeitsflags
+  isMotorPossible       Boolean     @default(true)
+  isCordPossible        Boolean     @default(true)
+  isIsgWindowPossible   Boolean     @default(true)
+  isIsgDoorPossible     Boolean     @default(true)
+  
+  // Gebühren
+  requiresManipulationFee Boolean   @default(false)  // +150€ wenn Bestand SS
+  
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+  orderItems            OrderItem[]
+}
+
+model Product {
+  id          String      @id @default(cuid())
+  name        String
+  description String?
+  category    String
+  unitPrice   Float
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  orderItems  OrderItem[]
+}
+
+model Order {
+  id                    String      @id @default(cuid())
+  residentId            String
+  resident              Resident    @relation(fields: [residentId], references: [id])
+  apartmentId           String
+  apartment             Apartment   @relation(fields: [apartmentId], references: [id])
+  status                String      @default("DRAFT")
+  totalNet              Float
+  totalGross            Float
+  materialTotal         Float       @default(0)
+  installationTotal     Float       @default(0)
+  manipulationTotal     Float       @default(0)
+  confirmationSignature String?
+  confirmationName      String?
+  confirmationIp        String?
+  confirmedAt           DateTime?
+  privacyAccepted       Boolean     @default(false)
+  termsAccepted         Boolean     @default(false)
+  withdrawalAccepted    Boolean     @default(false)
+  version               Int         @default(1)
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+  items                 OrderItem[]
+}
+
+model OrderItem {
+  id              String   @id @default(cuid())
+  orderId         String
+  order           Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  windowId        String?
+  window          Window?  @relation(fields: [windowId], references: [id])
+  productId       String
+  product         Product  @relation(fields: [productId], references: [id])
+  quantity        Int      @default(1)
+  unitPrice       Float
+  totalPrice      Float
+  installationFee Float    @default(0)
+  manipulationFee Float    @default(0)
+  notes           String?
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  tableName String
+  recordId  String
+  action    String
+  oldValues String?
+  newValues String?
+  userId    String?
+  userEmail String?
+  timestamp DateTime @default(now())
+}
+
+model Settings {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+  updatedBy String?
+}

@@ -1,0 +1,85 @@
+import NextAuth from "next-auth";
+import Credentials from "next-auth/providers/credentials";
+import { prisma } from "@/lib/prisma";
+import bcrypt from "bcryptjs";
+import { z } from "zod";
+
+export const {
+  handlers: { GET, POST },
+  auth,
+  signIn,
+  signOut,
+} = NextAuth({
+  providers: [
+    Credentials({
+      credentials: {
+        email: { label: "E-Mail", type: "email" },
+        password: { label: "Passwort", type: "password" },
+      },
+      authorize: async (credentials) => {
+        const parsed = z
+          .object({ email: z.string().email(), password: z.string() })
+          .safeParse(credentials);
+
+        if (!parsed.success) return null;
+
+        const { email, password } = parsed.data;
+
+        const resident = await prisma.resident.findUnique({
+          where: { loginEmail: email.toLowerCase() },
+          include: { apartment: { include: { building: true } } },
+        });
+
+        if (!resident || !resident.passwordHash || !resident.loginEnabled) {
+          return null;
+        }
+
+        const valid = await bcrypt.compare(password, resident.passwordHash);
+        if (!valid) return null;
+
+        await prisma.resident.update({
+          where: { id: resident.id },
+          data: { lastLoginAt: new Date() },
+        });
+
+        const role = resident.loginEmail === "admin@starhembergstr.at" ? "ADMIN" : resident.role;
+
+        return {
+          id: resident.id,
+          email: resident.loginEmail,
+          name: `${resident.firstName || ""} ${resident.lastName || ""}`.trim(),
+          role,
+          apartmentId: resident.apartmentId,
+        };
+      },
+    }),
+  ],
+  callbacks: {
+    async session({ session, token }) {
+      if (token.sub && session.user) {
+        session.user.id = token.sub;
+        session.user.role = token.role as string;
+        session.user.apartmentId = token.apartmentId as string;
+      }
+      return session;
+    },
+    async jwt({ token, user }) {
+      if (user) {
+        token.role = user.role;
+        token.apartmentId = user.apartmentId;
+      }
+      return token;
+    },
+  },
+  pages: {
+    signIn: "/login",
+    error: "/login",
+  },
+  session: {
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60,
+  },
+  trustHost: true,
+});
+
+export const isAdmin = (role: string) => role === "ADMIN";
