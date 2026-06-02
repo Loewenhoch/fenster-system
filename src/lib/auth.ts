@@ -1,7 +1,6 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import { prisma } from "@/lib/prisma";
-import bcrypt from "bcryptjs";
+// bcryptjs wird lazy in authorize() geladen – nicht in Edge/Middleware benötigt
 import { z } from "zod";
 
 export const {
@@ -17,6 +16,9 @@ export const {
         password: { label: "Passwort", type: "password" },
       },
       authorize: async (credentials) => {
+        // Lazy import von prisma – nur in Node.js API Routes, nie in Edge/Middleware
+        const { prisma } = await import("@/lib/prisma");
+
         const parsed = z
           .object({ email: z.string().email(), password: z.string() })
           .safeParse(credentials);
@@ -34,6 +36,7 @@ export const {
           return null;
         }
 
+        const bcrypt = await import("bcryptjs");
         const valid = await bcrypt.compare(password, resident.passwordHash);
         if (!valid) return null;
 
@@ -42,7 +45,10 @@ export const {
           data: { lastLoginAt: new Date() },
         });
 
-        const role = resident.loginEmail === "admin@starhembergstr.at" ? "ADMIN" : resident.role;
+        const role =
+          resident.loginEmail === "admin@starhembergstr.at"
+            ? "ADMIN"
+            : resident.role;
 
         return {
           id: resident.id,
