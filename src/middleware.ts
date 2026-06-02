@@ -1,10 +1,17 @@
-import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { getToken } from "next-auth/jwt";
 
-export default auth((req) => {
-  const { nextUrl } = req;
-  const isLoggedIn = !!req.auth;
-  const isAdmin = req.auth?.user?.role === "ADMIN";
+export async function middleware(request: NextRequest) {
+  const { nextUrl } = request;
+
+  const token = await getToken({
+    req: request,
+    secret: process.env.NEXTAUTH_SECRET,
+  });
+
+  const isLoggedIn = !!token;
+  const isAdmin = token?.role === "ADMIN";
 
   const isApiAuthRoute = nextUrl.pathname.startsWith("/api/auth");
   const isPublicRoute =
@@ -14,12 +21,6 @@ export default auth((req) => {
     nextUrl.pathname === "/widerruf" ||
     nextUrl.pathname === "/impressum" ||
     nextUrl.pathname === "/";
-
-  const isResidentRoute =
-    nextUrl.pathname.startsWith("/dashboard") ||
-    nextUrl.pathname.startsWith("/fenster") ||
-    nextUrl.pathname.startsWith("/bestellung") ||
-    nextUrl.pathname.startsWith("/profil");
 
   const isAdminRoute = nextUrl.pathname.startsWith("/admin");
 
@@ -40,7 +41,7 @@ export default auth((req) => {
   }
 
   return NextResponse.next();
-});
+}
 
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico|public).*)"],
