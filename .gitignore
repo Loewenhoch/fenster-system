@@ -46,7 +46,8 @@ next-env.d.ts
 *.db
 *.db-journal
 *.db.backup
-prisma/dev.db
+# SQLite DB wird fuer Vercel Demo mit ins Repo gepackt
+# prisma/dev.db
 prisma/dev.db.backup
 dev.db
 
