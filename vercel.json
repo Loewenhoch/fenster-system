@@ -4,6 +4,7 @@
   "installCommand": "npm install",
   "framework": "nextjs",
   "env": {
-    "NEXTAUTH_URL": "${VERCEL_URL}"
+    "AUTH_URL": "https://fenster-system-sta.vercel.app",
+    "NEXTAUTH_URL": "https://fenster-system-sta.vercel.app"
   }
 }
