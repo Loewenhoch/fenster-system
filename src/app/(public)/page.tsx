@@ -12,7 +12,7 @@ export default function HomePage() {
         </h1>
         <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
           Bestellen Sie bequem den gewünschten Sonnenschutz für Ihre Wohnung in
-          der Starhembergstraße 64.
+          der Starhembergstraße 64/66.
         </p>
         <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
           <Link href="/login">

@@ -12,18 +12,18 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "Sonnenschutz – Starhembergstraße 64",
+    default: "Sonnenschutz – Starhembergstraße 64/66",
     template: "%s – Sonnenschutz",
   },
   description:
-    "Online-Portal für Eigentümer der Starhembergstraße 64 zur Bestellung von Sonnenschutz. Einfach, übersichtlich und barrierefrei.",
+    "Online-Portal für Eigentümer der Starhembergstraße 64/66 zur Bestellung von Sonnenschutz. Einfach, übersichtlich und barrierefrei.",
   keywords: [
     "Sonnenschutz",
     "Eigentümerportal",
     "Starhembergstraße",
     "Wohnanlage",
   ],
-  authors: [{ name: "Sonnenschutz Starhembergstraße 64" }],
+  authors: [{ name: "Sonnenschutz Starhembergstraße 64/66" }],
   robots: {
     index: true,
     follow: true,
@@ -31,8 +31,8 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "de_AT",
-    siteName: "Sonnenschutz – Starhembergstraße 64",
-    title: "Sonnenschutz – Starhembergstraße 64",
+    siteName: "Sonnenschutz – Starhembergstraße 64/66",
+    title: "Sonnenschutz – Starhembergstraße 64/66",
     description:
       "Online-Portal für Eigentümer zur Bestellung von Sonnenschutz.",
   },

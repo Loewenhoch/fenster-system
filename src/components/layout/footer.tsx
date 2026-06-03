@@ -63,7 +63,7 @@ export function Footer() {
                   aria-hidden="true"
                 />
                 <span className="text-base text-muted-foreground">
-                  Starhembergstraße 64
+                  Starhembergstraße 64/66
                   <br />
                   Linz, OO, Austria
                 </span>
@@ -103,11 +103,11 @@ export function Footer() {
               </h3>
               <p className="text-base text-muted-foreground">
                 Ihr Online-Portal zur einfachen Bestellung von Sonnenschutz
-                für Eigentümer der Starhembergstraße 64.
+                für Eigentümer der Starhembergstraße 64/66.
               </p>
             </div>
             <p className="mt-6 text-sm text-muted-foreground">
-              &copy; {currentYear} Sonnenschutz Starhembergstraße 64. Alle Rechte
+              &copy; {currentYear} Sonnenschutz Starhembergstraße 64/66. Alle Rechte
               vorbehalten.
             </p>
           </div>

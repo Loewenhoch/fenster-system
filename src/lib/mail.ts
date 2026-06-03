@@ -24,7 +24,7 @@ export async function sendEmail({
 
   try {
     const { data, error } = await resend.emails.send({
-      from: "Sonnenschutz Starhembergstraße 64 <noreply@starhembergstr.at>",
+      from: "Sonnenschutz Starhembergstraße 64/66 <noreply@starhembergstr.at>",
       to: recipients,
       subject,
       html,
@@ -55,7 +55,7 @@ export function getInvitationEmail({
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h1 style="color: #1e3a5f;">Willkommen beim Bestellsystem</h1>
       <p>Hallo ${name},</p>
-      <p>Sie wurden für das digitale Bestellsystem der Starhembergstraße 64 registriert.</p>
+      <p>Sie wurden für das digitale Bestellsystem der Starhembergstraße 64/66 registriert.</p>
       <p>Hier können Sie online Ihre Sonnenschutz-Produkte auswählen und verbindlich bestellen.</p>
       <div style="text-align: center; margin: 30px 0;">
         <a href="${magicLink}" style="background-color: #e67e22; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-size: 18px; display: inline-block;">

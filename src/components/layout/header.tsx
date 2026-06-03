@@ -53,7 +53,7 @@ export function Header({ showNav = false, onMenuToggle, menuOpen }: HeaderProps)
               Sonnenschutz
             </span>
             <span className="text-sm font-medium opacity-90 sm:text-base">
-              Starhembergstraße 64
+              Starhembergstraße 64/66
             </span>
           </Link>
         </div>

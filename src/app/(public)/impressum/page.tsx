@@ -10,9 +10,9 @@ export default function ImpressumPage() {
         </CardHeader>
         <CardContent className="space-y-4 text-base text-muted-foreground">
           <p>
-            <strong>Starhembergstraße 64</strong>
+            <strong>Starhembergstraße 64/66</strong>
             <br />
-            Starhembergstraße 64
+            Starhembergstraße 64/66
             <br />
             Linz, OO, Austria
           </p>
@@ -24,7 +24,7 @@ export default function ImpressumPage() {
             Telefon: 0732 781022
           </p>
           <p>
-            Verantwortlich für den Inhalt: Starhembergstraße 64
+            Verantwortlich für den Inhalt: Starhembergstraße 64/66
           </p>
         </CardContent>
       </Card>

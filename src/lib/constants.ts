@@ -1,5 +1,5 @@
 export const APP_NAME = "Sonnenschutz";
-export const APP_SUBTITLE = "Starhembergstraße 64, Linz";
+export const APP_SUBTITLE = "Starhembergstraße 64/66, Linz";
 
 export const BUILDINGS = {
   H64: { number: "64", street: "Starhembergstraße", city: "Linz" },

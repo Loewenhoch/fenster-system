@@ -46,7 +46,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl text-[#1e3a5f]">Sonnenschutz</CardTitle>
-          <CardDescription>Starhembergstraße 64, Linz</CardDescription>
+          <CardDescription>Starhembergstraße 64/66, Linz</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
