@@ -16,7 +16,7 @@ export default function DatenschutzPage() {
           </p>
           <p>
             Bei der Nutzung dieses Portals werden bestimmte Daten von Ihnen
-            benötigt, um Ihnen die Auswahl von Fenstern und Sonnenschutz zu
+            benötigt, um Ihnen die Auswahl von Sonnenschutz-Produkten zu
             ermöglichen.
           </p>
           <p>

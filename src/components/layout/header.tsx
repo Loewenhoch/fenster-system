@@ -28,8 +28,7 @@ export function Header({ showNav = false, onMenuToggle, menuOpen }: HeaderProps)
       sessionStorage.clear();
       localStorage.clear();
     }
-    // Seite neu laden zur Login-Seite
-    window.location.href = "/login";
+    window.location.href = "/";
   };
 
   return (
@@ -51,10 +50,10 @@ export function Header({ showNav = false, onMenuToggle, menuOpen }: HeaderProps)
           )}
           <Link href="/" className="flex flex-col gap-0.5">
             <span className="text-xl font-bold tracking-tight sm:text-2xl">
-              Fenster & Sonnenschutz
+              Sonnenschutz
             </span>
             <span className="text-sm font-medium opacity-90 sm:text-base">
-              Starhembergstraße 64 & 66
+              Starhembergstraße 64
             </span>
           </Link>
         </div>

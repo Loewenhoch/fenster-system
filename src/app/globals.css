@@ -60,7 +60,7 @@
     min-height: 100vh;
   }
 
-  /* Große Touch-Targets für ältere Bewohner */
+  /* Große Touch-Targets für ältere Eigentümer */
   button,
   [role="button"],
   a {

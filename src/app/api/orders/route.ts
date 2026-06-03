@@ -125,7 +125,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Alle benötigten Fenster und Produkte auf einmal laden
+    // Alle benötigten Öffnungen und Produkte auf einmal laden
     const windowIds = [...new Set(items.map((i) => i.windowId).filter(Boolean))];
     const productIds = [...new Set(items.map((i) => i.productId).filter(Boolean))];
 
@@ -153,7 +153,7 @@ export async function POST(req: Request) {
       const product = productMap.get(item.productId);
 
       if (!window) {
-        throw new Error(`Fenster ${item.windowId} nicht gefunden`);
+        throw new Error(`Öffnung ${item.windowId} nicht gefunden`);
       }
       if (!product) {
         throw new Error(`Produkt ${item.productId} nicht gefunden`);
@@ -211,7 +211,7 @@ export async function POST(req: Request) {
     return NextResponse.json(order, { status: 201 });
   } catch (error) {
     console.error("API Error:", error);
-    if (error instanceof Error && error.message.startsWith("Fenster")) {
+    if (error instanceof Error && error.message.startsWith("Öffnung")) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
     if (error instanceof Error && error.message.startsWith("Produkt")) {

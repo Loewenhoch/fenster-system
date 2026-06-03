@@ -12,19 +12,18 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "Fenster & Sonnenschutz – Starhembergstraße 64 & 66",
-    template: "%s – Fenster & Sonnenschutz",
+    default: "Sonnenschutz – Starhembergstraße 64",
+    template: "%s – Sonnenschutz",
   },
   description:
-    "Online-Portal für Bewohner der Starhembergstraße 64 & 66 zur Auswahl von Fenstern und Sonnenschutz. Einfach, übersichtlich und barrierefrei.",
+    "Online-Portal für Eigentümer der Starhembergstraße 64 zur Bestellung von Sonnenschutz. Einfach, übersichtlich und barrierefrei.",
   keywords: [
-    "Fenster",
     "Sonnenschutz",
-    "Bewohnerportal",
+    "Eigentümerportal",
     "Starhembergstraße",
     "Wohnanlage",
   ],
-  authors: [{ name: "Fenster & Sonnenschutz" }],
+  authors: [{ name: "Sonnenschutz Starhembergstraße 64" }],
   robots: {
     index: true,
     follow: true,
@@ -32,10 +31,10 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "de_AT",
-    siteName: "Fenster & Sonnenschutz – Starhembergstraße 64 & 66",
-    title: "Fenster & Sonnenschutz – Starhembergstraße 64 & 66",
+    siteName: "Sonnenschutz – Starhembergstraße 64",
+    title: "Sonnenschutz – Starhembergstraße 64",
     description:
-      "Online-Portal für Bewohner zur Auswahl von Fenstern und Sonnenschutz.",
+      "Online-Portal für Eigentümer zur Bestellung von Sonnenschutz.",
   },
 };
 

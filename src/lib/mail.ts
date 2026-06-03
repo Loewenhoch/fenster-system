@@ -24,7 +24,7 @@ export async function sendEmail({
 
   try {
     const { data, error } = await resend.emails.send({
-      from: "Fenster & Sonnenschutz <noreply@starhembergstr.at>",
+      from: "Sonnenschutz Starhembergstraße 64 <noreply@starhembergstr.at>",
       to: recipients,
       subject,
       html,
@@ -50,13 +50,13 @@ export function getInvitationEmail({
   name: string;
   magicLink: string;
 }) {
-  const subject = "Ihr Zugang zum Fenster & Sonnenschutz Bestellsystem";
+  const subject = "Ihr Zugang zum Sonnenschutz-Bestellsystem";
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h1 style="color: #1e3a5f;">Willkommen beim Bestellsystem</h1>
       <p>Hallo ${name},</p>
-      <p>Sie wurden für das digitale Bestellsystem der Starhembergstraße 64 & 66 registriert.</p>
-      <p>Hier können Sie online Ihre Fenster und Sonnenschutz-Produkte auswählen und verbindlich bestellen.</p>
+      <p>Sie wurden für das digitale Bestellsystem der Starhembergstraße 64 registriert.</p>
+      <p>Hier können Sie online Ihre Sonnenschutz-Produkte auswählen und verbindlich bestellen.</p>
       <div style="text-align: center; margin: 30px 0;">
         <a href="${magicLink}" style="background-color: #e67e22; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-size: 18px; display: inline-block;">
           Jetzt einloggen
@@ -84,7 +84,7 @@ export function getOrderConfirmationEmail({
   total: string;
   pdfUrl?: string;
 }) {
-  const subject = "Bestellbestätigung – Fenster & Sonnenschutz";
+  const subject = "Bestellbestätigung – Sonnenschutz";
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h1 style="color: #1e3a5f;">Bestellbestätigung</h1>
@@ -109,12 +109,12 @@ export function getReminderEmail({
   name: string;
   dashboardUrl: string;
 }) {
-  const subject = "Erinnerung: Fenster & Sonnenschutz Bestellung";
+  const subject = "Erinnerung: Sonnenschutz-Bestellung";
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h1 style="color: #1e3a5f;">Erinnerung</h1>
       <p>Hallo ${name},</p>
-      <p>Sie haben noch keine verbindliche Bestellung für Fenster und Sonnenschutz-Produkte abgegeben.</p>
+      <p>Sie haben noch keine verbindliche Bestellung für Sonnenschutz-Produkte abgegeben.</p>
       <p>Bitte loggen Sie sich ein und schließen Sie Ihre Bestellung ab.</p>
       <div style="text-align: center; margin: 30px 0;">
         <a href="${dashboardUrl}" style="background-color: #e67e22; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-size: 18px; display: inline-block;">
@@ -142,7 +142,7 @@ export function getAdminNotificationEmail({
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h1 style="color: #1e3a5f;">Neue Bestellung eingegangen</h1>
-      <p><strong>Bewohner:</strong> ${residentName}</p>
+      <p><strong>Eigentümer:</strong> ${residentName}</p>
       <p><strong>Wohnung:</strong> ${apartment}</p>
       <p><strong>Bestellnummer:</strong> ${orderId}</p>
       <p><strong>Summe:</strong> ${total} €</p>

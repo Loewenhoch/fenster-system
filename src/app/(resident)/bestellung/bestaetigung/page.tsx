@@ -180,7 +180,7 @@ export default function BestellungBestaetigungPage() {
                 <div>
                   <p className="font-medium text-base">{item.product.name}</p>
                   <p className="text-sm text-muted-foreground">
-                    Fenster {item.window.windowNumber} · {item.window.location}
+                    Öffnung {item.window.windowNumber} · {item.window.location}
                   </p>
                   <div className="flex flex-wrap gap-x-2 text-xs text-muted-foreground mt-0.5">
                     <span>Mat.: {item.unitPrice.toFixed(2).replace(".", ",")} €</span>

@@ -63,9 +63,9 @@ export function Footer() {
                   aria-hidden="true"
                 />
                 <span className="text-base text-muted-foreground">
-                  Starhembergstraße 64 &amp; 66
+                  Starhembergstraße 64
                   <br />
-                  1060 Wien, Österreich
+                  Linz, OO, Austria
                 </span>
               </li>
               <li className="flex items-center gap-3">
@@ -74,10 +74,10 @@ export function Footer() {
                   aria-hidden="true"
                 />
                 <a
-                  href="mailto:info@fenster-sonnenschutz.at"
+                  href="mailto:zt@platzer.co.at"
                   className="text-base text-muted-foreground transition-colors hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
-                  info@fenster-sonnenschutz.at
+                  zt@platzer.co.at
                 </a>
               </li>
               <li className="flex items-center gap-3">
@@ -86,10 +86,10 @@ export function Footer() {
                   aria-hidden="true"
                 />
                 <a
-                  href="tel:+431234567890"
+                  href="tel:+43732781022"
                   className="text-base text-muted-foreground transition-colors hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
-                  +43 1 234 567 890
+                  0732 781022
                 </a>
               </li>
             </ul>
@@ -102,12 +102,12 @@ export function Footer() {
                 Über uns
               </h3>
               <p className="text-base text-muted-foreground">
-                Ihr Online-Portal zur einfachen Auswahl von Fenstern und
-                Sonnenschutz für die Wohnanlage Starhembergstraße.
+                Ihr Online-Portal zur einfachen Bestellung von Sonnenschutz
+                für Eigentümer der Starhembergstraße 64.
               </p>
             </div>
             <p className="mt-6 text-sm text-muted-foreground">
-              &copy; {currentYear} Fenster &amp; Sonnenschutz. Alle Rechte
+              &copy; {currentYear} Sonnenschutz Starhembergstraße 64. Alle Rechte
               vorbehalten.
             </p>
           </div>

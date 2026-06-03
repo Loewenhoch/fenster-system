@@ -13,8 +13,8 @@ export default function AgbPage() {
             Die Nutzung dieses Portals unterliegt den folgenden Bedingungen:
           </p>
           <ul className="list-inside list-disc space-y-2">
-            <li>Das Portal steht ausschließlich den Bewohnern der Starhembergstraße 64 &amp; 66 zur Verfügung.</li>
-            <li>Die Auswahl von Fenstern und Sonnenschutz ist verbindlich.</li>
+            <li>Das Portal steht ausschließlich den Eigentümern der Starhembergstraße 64 zur Verfügung.</li>
+            <li>Die Auswahl von Sonnenschutz-Produkten ist verbindlich.</li>
             <li>Änderungen sind bis zum festgelegten Stichtag möglich.</li>
             <li>Die Daten werden sicher gespeichert und verarbeitet.</li>
           </ul>

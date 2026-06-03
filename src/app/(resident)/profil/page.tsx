@@ -35,7 +35,7 @@ export default async function ProfilePage() {
             </div>
             <div className="flex items-center gap-3">
               <Shield className="size-5 text-muted-foreground" />
-              <span className="text-base">Rolle: {session?.user?.role === "ADMIN" ? "Administrator" : "Bewohner"}</span>
+              <span className="text-base">Rolle: {session?.user?.role === "ADMIN" ? "Administrator" : "Eigentümer"}</span>
             </div>
           </CardContent>
         </Card>

@@ -67,7 +67,7 @@ export default async function DashboardPage() {
       {/* Begrüßung */}
       <div>
         <h1 className="text-2xl font-bold text-primary sm:text-3xl">
-          Willkommen, {resident.firstName || resident.lastName || "Bewohner"}
+          Willkommen, {resident.firstName || resident.lastName || "Eigentümer"}
         </h1>
         <p className="mt-1 text-base text-muted-foreground">
           Hier finden Sie alle Informationen zu Ihrer Wohnung und Bestellung.
@@ -234,7 +234,7 @@ export default async function DashboardPage() {
               <div className="flex items-center gap-3 text-base">
                 <Eye className="size-5 text-accent" />
                 <span>
-                  {windowsWithInterest.length} Fenster mit Interesse markiert
+                  {windowsWithInterest.length} Öffnungen mit Interesse markiert
                 </span>
               </div>
             )}
@@ -251,9 +251,9 @@ export default async function DashboardPage() {
             className="btn-xl h-auto w-full flex-col gap-2 py-6"
           >
             <Eye className="size-8" />
-            <span className="text-lg font-semibold">Fenster ansehen</span>
+            <span className="text-lg font-semibold">Öffnungen ansehen</span>
             <span className="text-sm font-normal text-muted-foreground">
-              {windows.length} Fenster in Ihrer Wohnung
+              {windows.length} Öffnungen in Ihrer Wohnung
             </span>
           </Button>
         </Link>
@@ -281,7 +281,7 @@ export default async function DashboardPage() {
               <ShoppingCart className="size-8" />
               <span className="text-lg font-semibold">Bestellung starten</span>
               <span className="text-sm font-normal text-primary-foreground/80">
-                {orderableWindows.length} Fenster verfügbar
+                {orderableWindows.length} Öffnungen verfügbar
               </span>
             </Button>
           </Link>

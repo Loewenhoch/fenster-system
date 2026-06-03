@@ -28,13 +28,13 @@ export default function AdminBewohnerPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-[#1e3a5f]">Bewohner</h1>
+      <h1 className="text-3xl font-bold text-[#1e3a5f]">Eigentümer</h1>
 
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            Alle Bewohner
+            Alle Eigentümer
           </CardTitle>
         </CardHeader>
         <CardContent>

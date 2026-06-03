@@ -10,21 +10,21 @@ export default function ImpressumPage() {
         </CardHeader>
         <CardContent className="space-y-4 text-base text-muted-foreground">
           <p>
-            <strong>Fenster &amp; Sonnenschutz</strong>
+            <strong>Starhembergstraße 64</strong>
             <br />
-            Starhembergstraße 64 &amp; 66
+            Starhembergstraße 64
             <br />
-            1060 Wien, Österreich
+            Linz, OO, Austria
           </p>
           <p>
             <strong>Kontakt:</strong>
             <br />
-            E-Mail: info@fenster-sonnenschutz.at
+            E-Mail: zt@platzer.co.at
             <br />
-            Telefon: +43 1 234 567 890
+            Telefon: 0732 781022
           </p>
           <p>
-            Verantwortlich für den Inhalt: Fenster &amp; Sonnenschutz GmbH
+            Verantwortlich für den Inhalt: Starhembergstraße 64
           </p>
         </CardContent>
       </Card>

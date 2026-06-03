@@ -88,7 +88,7 @@ export default function BestellungPage() {
     async function fetchData() {
       try {
         const res = await fetch("/api/apartments/current/windows");
-        if (!res.ok) throw new Error("Fenster konnten nicht geladen werden");
+        if (!res.ok) throw new Error("Öffnungen konnten nicht geladen werden");
         const data = await res.json();
         setWindows(data.windows);
         const saved = getOrderState();
@@ -102,7 +102,7 @@ export default function BestellungPage() {
     fetchData();
   }, []);
 
-  // Prüfe ob für ein Fenster ein Motor-Produkt ausgewählt wurde
+  // Prüfe ob für eine Öffnung ein Motor-Produkt ausgewählt wurde
   const isMotorSelected = useCallback(
     (windowId: string) => {
       const win = windows.find((w) => w.id === windowId);
@@ -129,7 +129,7 @@ export default function BestellungPage() {
     (windowId: string, product: MainProduct) => {
       if (isSelected(windowId, product.id)) {
         removeSelection(windowId, product.id);
-        // Wenn Motor abgewählt wird, auch alle Zubehör für dieses Fenster entfernen
+        // Wenn Motor abgewählt wird, auch alle Zubehör für diese Öffnung entfernen
         if (product.type === "MOTOR") {
           const win = windows.find((w) => w.id === windowId);
           if (win) {
@@ -226,7 +226,7 @@ export default function BestellungPage() {
     router.push("/bestellung/zusammenfassung");
   };
 
-  if (loading) return <Loading fullScreen text="Fenster werden geladen..." />;
+  if (loading) return <Loading fullScreen text="Öffnungen werden geladen..." />;
   if (error && !windows.length)
     return <ErrorState message={error} onRetry={() => window.location.reload()} />;
 
@@ -255,7 +255,7 @@ export default function BestellungPage() {
           Produkte auswählen
         </h1>
         <p className="mt-1 text-base text-muted-foreground">
-          Wählen Sie für jedes Fenster die gewünschten Produkte aus.
+          Wählen Sie für jede Öffnung die gewünschten Sonnenschutz-Produkte aus.
         </p>
       </div>
 
@@ -278,7 +278,7 @@ export default function BestellungPage() {
                   <div>
                     <CardTitle className="flex items-center gap-2 text-lg">
                       <Home className="size-5 text-accent" />
-                      Fenster {win.windowNumber}
+                      Öffnung {win.windowNumber}
                     </CardTitle>
                     <CardDescription>
                       {win.location} · {win.widthMm} x {win.heightMm} mm ·{" "}
@@ -325,7 +325,7 @@ export default function BestellungPage() {
                       </h3>
                       {win.mainProducts.length === 0 ? (
                         <p className="text-base text-muted-foreground py-2">
-                          Für dieses Fenster sind aktuell keine Produkte verfügbar.
+                          Für diese Öffnung sind aktuell keine Produkte verfügbar.
                         </p>
                       ) : (
                         <div className="space-y-2">

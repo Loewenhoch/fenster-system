@@ -84,10 +84,10 @@ export default async function FensterPage({
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-primary sm:text-3xl">
-          Meine Fenster
+          Meine Öffnungen
         </h1>
         <p className="mt-1 text-base text-muted-foreground">
-          Übersicht aller Fenster Ihrer Wohnung
+          Übersicht aller Öffnungen Ihrer Wohnung
         </p>
       </div>
 
@@ -128,12 +128,12 @@ export default async function FensterPage({
         </a>
       </div>
 
-      {/* Fenster-Tabelle */}
+      {/* Öffnungs-Tabelle */}
       <Card className="card-elevated">
         <CardHeader className="pb-3">
-          <CardTitle className="text-xl">Fensterliste</CardTitle>
+          <CardTitle className="text-xl">Öffnungsliste</CardTitle>
           <CardDescription>
-            {filteredWindows.length} von {windows.length} Fenstern angezeigt
+            {filteredWindows.length} von {windows.length} Öffnungen angezeigt
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0 sm:p-4">
@@ -141,7 +141,7 @@ export default async function FensterPage({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-base">Fenster-Nr</TableHead>
+                  <TableHead className="text-base">Öffnung-Nr</TableHead>
                   <TableHead className="text-base">Lage</TableHead>
                   <TableHead className="text-base">Maße</TableHead>
                   <TableHead className="text-base">Bestand SS</TableHead>
@@ -246,8 +246,8 @@ export default async function FensterPage({
         <CardContent className="py-6">
           <p className="text-base text-muted-foreground">
             <strong className="text-foreground">Hinweis:</strong> Die
-            verfügbaren Produkte für jedes Fenster sehen Sie im Bestellvorgang.
-            Nicht alle Produkte sind für jedes Fenster verfügbar.
+            verfügbaren Produkte für jede Öffnung sehen Sie im Bestellvorgang.
+            Nicht alle Produkte sind für jede Öffnung verfügbar.
           </p>
         </CardContent>
       </Card>

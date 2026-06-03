@@ -56,8 +56,8 @@ export default function AdminWohnungenPage() {
                   <TableHead>Haus</TableHead>
                   <TableHead>Top</TableHead>
                   <TableHead>Stockwerk</TableHead>
-                  <TableHead>Bewohner</TableHead>
-                  <TableHead>Fenster</TableHead>
+                  <TableHead>Eigentümer</TableHead>
+                  <TableHead>Öffnungen</TableHead>
                   <TableHead>Status</TableHead>
                 </TableRow>
               </TableHeader>

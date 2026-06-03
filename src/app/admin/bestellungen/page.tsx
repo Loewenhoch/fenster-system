@@ -130,7 +130,7 @@ export default function AdminBestellungenPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Bestellung</TableHead>
-                    <TableHead>Bewohner</TableHead>
+                    <TableHead>Eigentümer</TableHead>
                     <TableHead>Wohnung</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Datum</TableHead>
@@ -186,7 +186,7 @@ export default function AdminBestellungenPage() {
                             <div className="space-y-4 mt-4">
                               <div className="grid grid-cols-2 gap-4 text-sm">
                                 <div>
-                                  <span className="text-muted-foreground">Bewohner:</span>
+                                  <span className="text-muted-foreground">Eigentümer:</span>
                                   <p className="font-medium">
                                     {o.resident?.firstName} {o.resident?.lastName}
                                   </p>
@@ -225,7 +225,7 @@ export default function AdminBestellungenPage() {
                                   <thead className="bg-muted">
                                     <tr>
                                       <th className="px-3 py-2 text-left">Produkt</th>
-                                      <th className="px-3 py-2 text-left">Fenster</th>
+                                      <th className="px-3 py-2 text-left">Öffnung</th>
                                       <th className="px-3 py-2 text-right">Material</th>
                                       <th className="px-3 py-2 text-right">Mont.</th>
                                       <th className="px-3 py-2 text-right">Manip.</th>

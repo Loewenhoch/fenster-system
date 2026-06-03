@@ -37,7 +37,7 @@ export default async function AdminDashboard() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">Bewohner</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-500">Eigentümer</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">

@@ -46,12 +46,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     if (process.env.RESEND_API_KEY) {
       await resend.emails.send({
-        from: "noreply@sta-fenster.at",
+        from: "noreply@starhembergstr.at",
         to: resident.loginEmail!,
-        subject: "Ihr Anmeldelink für das STA Fenster System",
+        subject: "Ihr Anmeldelink für das Sonnenschutz-Portal",
         html: `
           <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #1e3a5f;">Anmelden bei STA Fenster System</h1>
+            <h1 style="color: #1e3a5f;">Anmelden beim Sonnenschutz-Portal</h1>
             <p>Hallo ${resident.firstName || ""} ${resident.lastName || ""},</p>
             <p>Sie haben einen Magic-Link angefordert. Klicken Sie auf den folgenden Button, um sich anzumelden:</p>
             <a href="${link}" style="display: inline-block; padding: 16px 32px; background-color: #1e3a5f; color: white; text-decoration: none; border-radius: 8px; font-size: 18px; margin: 16px 0;">Jetzt anmelden</a>

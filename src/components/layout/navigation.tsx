@@ -25,9 +25,9 @@ const residentLinks = [
   },
   {
     href: "/fenster",
-    label: "Meine Fenster",
+    label: "Meine Öffnungen",
     icon: SquareCheck,
-    description: "Fenster auswählen",
+    description: "Sonnenschutz prüfen",
   },
   {
     href: "/bestellung",
@@ -58,9 +58,9 @@ const adminLinks = [
   },
   {
     href: "/admin/bewohner",
-    label: "Bewohner",
+    label: "Eigentümer",
     icon: UserCircle,
-    description: "Bewohner verwalten",
+    description: "Eigentümer verwalten",
   },
   {
     href: "/admin/bestellungen",

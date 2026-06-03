@@ -36,7 +36,7 @@ export function createOrderPDF({ order, resident, apartment, building, items }: 
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
           <Text style={styles.title}>Bestellbestätigung</Text>
-          <Text style={styles.subtitle}>Fenster & Sonnenschutz – {building.street} {building.houseNumber}, {building.city}</Text>
+          <Text style={styles.subtitle}>Sonnenschutz – {building.street} {building.houseNumber}, {building.city}</Text>
         </View>
 
         <View style={styles.section}>
@@ -47,7 +47,7 @@ export function createOrderPDF({ order, resident, apartment, building, items }: 
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Bewohner</Text>
+          <Text style={styles.sectionTitle}>Eigentümer</Text>
           <View style={styles.row}><Text style={styles.label}>Name:</Text><Text style={styles.value}>{fullName || "—"}</Text></View>
           <View style={styles.row}><Text style={styles.label}>Wohnung:</Text><Text style={styles.value}>{apartment.topNumber}, {apartment.floor}</Text></View>
         </View>
@@ -57,7 +57,7 @@ export function createOrderPDF({ order, resident, apartment, building, items }: 
           <View style={styles.table}>
             <View style={styles.tableHeader}>
               <Text style={styles.tableCellWide}>Produkt</Text>
-              <Text style={styles.tableCell}>Fenster</Text>
+              <Text style={styles.tableCell}>Öffnung</Text>
               <Text style={styles.tableCell}>Menge</Text>
               <Text style={styles.tableCell}>Einzelpreis</Text>
               <Text style={styles.tableCell}>Gesamt</Text>

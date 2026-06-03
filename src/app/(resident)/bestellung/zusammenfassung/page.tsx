@@ -206,7 +206,7 @@ export default function ZusammenfassungPage() {
                     </div>
                     <div className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
                       <Home className="size-4" />
-                      Fenster {win?.windowNumber || selection.windowId.slice(0, 6)}
+                      Öffnung {win?.windowNumber || selection.windowId.slice(0, 6)}
                       {win?.location && ` · ${win.location}`}
                     </div>
                     {/* Preisaufschlüsselung pro Zeile */}

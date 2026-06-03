@@ -8,11 +8,11 @@ export default function HomePage() {
       {/* Hero */}
       <section className="text-center">
         <h1 className="text-3xl font-bold tracking-tight text-primary sm:text-4xl lg:text-5xl">
-          Willkommen im Bewohnerportal
+          Sonnenschutz für Eigentümer
         </h1>
         <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-          Wählen Sie bequem Ihre neuen Fenster und Sonnenschutzlösungen für die
-          Wohnanlage Starhembergstraße 64 &amp; 66 aus.
+          Bestellen Sie bequem den gewünschten Sonnenschutz für Ihre Wohnung in
+          der Starhembergstraße 64.
         </p>
         <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
           <Link href="/login">
@@ -31,11 +31,11 @@ export default function HomePage() {
             <Home className="size-6 text-primary" aria-hidden="true" />
           </div>
           <h2 className="text-xl font-semibold text-primary">
-            Fensterauswahl
+            Eigentümerportal
           </h2>
           <p className="mt-2 text-base text-muted-foreground">
-            Wählen Sie aus verschiedenen Fenstertypen und Ausführungen für Ihre
-            Wohnung.
+            Melden Sie sich als Eigentümer an und sehen Sie die verfügbaren
+            Bestellmöglichkeiten für Ihre Wohnung.
           </p>
         </div>
 
@@ -47,8 +47,8 @@ export default function HomePage() {
             Sonnenschutz
           </h2>
           <p className="mt-2 text-base text-muted-foreground">
-            Entscheiden Sie sich für den passenden Sonnenschutz – von
-            Markisen bis Jalousien.
+            Wählen Sie den passenden Sonnenschutz für die vorhandenen
+            Öffnungen Ihrer Wohnung aus.
           </p>
         </div>
 
