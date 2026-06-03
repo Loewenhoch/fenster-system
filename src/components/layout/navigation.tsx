@@ -25,7 +25,7 @@ const residentLinks = [
   },
   {
     href: "/fenster",
-    label: "Meine Öffnungen",
+    label: "Meine Fenster",
     icon: SquareCheck,
     description: "Sonnenschutz prüfen",
   },

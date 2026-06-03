@@ -57,7 +57,7 @@ export function createOrderPDF({ order, resident, apartment, building, items }: 
           <View style={styles.table}>
             <View style={styles.tableHeader}>
               <Text style={styles.tableCellWide}>Produkt</Text>
-              <Text style={styles.tableCell}>Öffnung</Text>
+              <Text style={styles.tableCell}>Fenster</Text>
               <Text style={styles.tableCell}>Menge</Text>
               <Text style={styles.tableCell}>Einzelpreis</Text>
               <Text style={styles.tableCell}>Gesamt</Text>

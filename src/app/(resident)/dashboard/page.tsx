@@ -234,7 +234,7 @@ export default async function DashboardPage() {
               <div className="flex items-center gap-3 text-base">
                 <Eye className="size-5 text-accent" />
                 <span>
-                  {windowsWithInterest.length} Öffnungen mit Interesse markiert
+                  {windowsWithInterest.length} Fenster mit Sonnenschutz-Interesse markiert
                 </span>
               </div>
             )}
@@ -251,9 +251,9 @@ export default async function DashboardPage() {
             className="btn-xl h-auto w-full flex-col gap-2 py-6"
           >
             <Eye className="size-8" />
-            <span className="text-lg font-semibold">Öffnungen ansehen</span>
+            <span className="text-lg font-semibold">Fenster ansehen</span>
             <span className="text-sm font-normal text-muted-foreground">
-              {windows.length} Öffnungen in Ihrer Wohnung
+              {windows.length} Fenster in Ihrer Wohnung
             </span>
           </Button>
         </Link>
@@ -281,7 +281,7 @@ export default async function DashboardPage() {
               <ShoppingCart className="size-8" />
               <span className="text-lg font-semibold">Bestellung starten</span>
               <span className="text-sm font-normal text-primary-foreground/80">
-                {orderableWindows.length} Öffnungen verfügbar
+                {orderableWindows.length} Fenster mit Sonnenschutz-Option verfügbar
               </span>
             </Button>
           </Link>

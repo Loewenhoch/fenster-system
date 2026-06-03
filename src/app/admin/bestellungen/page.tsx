@@ -225,7 +225,7 @@ export default function AdminBestellungenPage() {
                                   <thead className="bg-muted">
                                     <tr>
                                       <th className="px-3 py-2 text-left">Produkt</th>
-                                      <th className="px-3 py-2 text-left">Öffnung</th>
+                                      <th className="px-3 py-2 text-left">Fenster</th>
                                       <th className="px-3 py-2 text-right">Material</th>
                                       <th className="px-3 py-2 text-right">Mont.</th>
                                       <th className="px-3 py-2 text-right">Manip.</th>

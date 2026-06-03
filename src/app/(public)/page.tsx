@@ -48,7 +48,7 @@ export default function HomePage() {
           </h2>
           <p className="mt-2 text-base text-muted-foreground">
             Wählen Sie den passenden Sonnenschutz für die vorhandenen
-            Öffnungen Ihrer Wohnung aus.
+            Fenstern Ihrer Wohnung aus.
           </p>
         </div>
 
