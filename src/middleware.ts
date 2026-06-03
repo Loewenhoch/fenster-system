@@ -1,17 +1,10 @@
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { getToken } from "next-auth/jwt";
+import { auth } from "@/lib/auth";
 
-export async function middleware(request: NextRequest) {
+export default auth((request) => {
   const { nextUrl } = request;
-
-  const token = await getToken({
-    req: request,
-    secret: process.env.NEXTAUTH_SECRET,
-  });
-
-  const isLoggedIn = !!token;
-  const isAdmin = token?.role === "ADMIN";
+  const isLoggedIn = !!request.auth?.user;
+  const isAdmin = request.auth?.user?.role === "ADMIN";
 
   const isApiAuthRoute = nextUrl.pathname.startsWith("/api/auth");
   const isPublicRoute =
@@ -41,7 +34,7 @@ export async function middleware(request: NextRequest) {
   }
 
   return NextResponse.next();
-}
+});
 
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico|public).*)"],
