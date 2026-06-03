@@ -35,6 +35,7 @@ interface OrderItem {
   installationFee: number;
   manipulationFee: number;
   totalPrice: number;
+  quantity: number;
   priceBreakdown: {
     unitPrice: number;
     installationFee: number;
@@ -227,8 +228,7 @@ export default function AdminBestellungenPage() {
                                       <th className="px-3 py-2 text-left">Produkt</th>
                                       <th className="px-3 py-2 text-left">Fenster</th>
                                       <th className="px-3 py-2 text-right">Material</th>
-                                      <th className="px-3 py-2 text-right">Mont.</th>
-                                      <th className="px-3 py-2 text-right">Manip.</th>
+                                      <th className="px-3 py-2 text-right">Montage</th>
                                       <th className="px-3 py-2 text-right">Gesamt</th>
                                     </tr>
                                   </thead>
@@ -247,26 +247,17 @@ export default function AdminBestellungenPage() {
                                           <span className="text-xs">
                                             {item.window.location} · {item.window.widthMm}x
                                             {item.window.heightMm} mm
+                                            {item.quantity > 1 ? ` · ${item.quantity} Stk.` : ""}
                                           </span>
                                         </td>
                                         <td className="px-3 py-2 text-right">
                                           {formatPrice(item.unitPrice)}
                                         </td>
                                         <td className="px-3 py-2 text-right">
-                                          {item.installationFee > 0 ? (
+                                          {item.installationFee + item.manipulationFee > 0 ? (
                                             <span className="flex items-center justify-end gap-1">
                                               <Wrench className="size-3 text-muted-foreground" />
-                                              {formatPrice(item.installationFee)}
-                                            </span>
-                                          ) : (
-                                            "–"
-                                          )}
-                                        </td>
-                                        <td className="px-3 py-2 text-right">
-                                          {item.manipulationFee > 0 ? (
-                                            <span className="flex items-center justify-end gap-1 text-warning">
-                                              <AlertTriangle className="size-3" />
-                                              {formatPrice(item.manipulationFee)}
+                                              {formatPrice(item.installationFee + item.manipulationFee)}
                                             </span>
                                           ) : (
                                             "–"
@@ -286,17 +277,17 @@ export default function AdminBestellungenPage() {
                                   <span className="text-muted-foreground">Materialkosten</span>
                                   <span>{formatPrice(o.materialTotal)}</span>
                                 </div>
-                                {o.installationTotal > 0 && (
+                                {o.installationTotal + o.manipulationTotal > 0 && (
                                   <div className="flex justify-between">
-                                    <span className="text-muted-foreground">Montagekosten</span>
-                                    <span>{formatPrice(o.installationTotal)}</span>
+                                    <span className="text-muted-foreground">Montagegebühren</span>
+                                    <span>{formatPrice(o.installationTotal + o.manipulationTotal)}</span>
                                   </div>
                                 )}
                                 {o.manipulationTotal > 0 && (
-                                  <div className="flex justify-between text-warning">
+                                  <div className="flex justify-between text-muted-foreground">
                                     <span className="flex items-center gap-1">
                                       <AlertTriangle className="size-3" />
-                                      Manipulationsgebühr
+                                      davon Manipulation bei Bestand
                                     </span>
                                     <span>{formatPrice(o.manipulationTotal)}</span>
                                   </div>

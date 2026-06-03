@@ -1,13 +1,18 @@
 "use client";
 
+import { calculateSelectionBreakdown } from "@/lib/pricing";
+
 export interface OrderSelection {
   windowId: string;
   productId: string;
   productName: string;
+  category?: string;
   unitPrice: number;
+  quantity?: number;
   installationFee: number;
   manipulationFee: number;
   totalPrice: number;
+  isMountable?: boolean;
 }
 
 export interface OrderState {
@@ -64,7 +69,7 @@ export function setSelections(selections: OrderSelection[]): void {
 
 export function getSubtotal(): number {
   const state = getOrderState();
-  return state.selections.reduce((sum, s) => sum + s.totalPrice, 0);
+  return calculateSelectionBreakdown(state.selections).totalNet;
 }
 
 export function getPriceBreakdown(): {
@@ -74,19 +79,5 @@ export function getPriceBreakdown(): {
   totalNet: number;
 } {
   const state = getOrderState();
-  const materialTotal = state.selections.reduce((sum, s) => sum + s.unitPrice, 0);
-  const installationTotal = state.selections.reduce(
-    (sum, s) => sum + s.installationFee,
-    0
-  );
-  const manipulationTotal = state.selections.reduce(
-    (sum, s) => sum + s.manipulationFee,
-    0
-  );
-  return {
-    materialTotal,
-    installationTotal,
-    manipulationTotal,
-    totalNet: materialTotal + installationTotal + manipulationTotal,
-  };
+  return calculateSelectionBreakdown(state.selections);
 }

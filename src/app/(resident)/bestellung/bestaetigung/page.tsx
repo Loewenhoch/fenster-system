@@ -40,6 +40,7 @@ interface OrderData {
     installationFee: number;
     manipulationFee: number;
     totalPrice: number;
+    quantity: number;
   }>;
 }
 
@@ -183,17 +184,21 @@ export default function BestellungBestaetigungPage() {
                     Fenster {item.window.windowNumber} · {item.window.location}
                   </p>
                   <div className="flex flex-wrap gap-x-2 text-xs text-muted-foreground mt-0.5">
-                    <span>Mat.: {item.unitPrice.toFixed(2).replace(".", ",")} €</span>
-                    {item.installationFee > 0 && (
+                    <span>
+                      Mat.:{" "}
+                      {item.quantity > 1
+                        ? `${item.quantity} × ${item.unitPrice
+                            .toFixed(2)
+                            .replace(".", ",")} €`
+                        : `${item.unitPrice.toFixed(2).replace(".", ",")} €`}
+                    </span>
+                    {item.installationFee + item.manipulationFee > 0 && (
                       <span className="flex items-center gap-0.5">
                         <Wrench className="size-3" />
-                        Mont.: {item.installationFee.toFixed(2).replace(".", ",")} €
-                      </span>
-                    )}
-                    {item.manipulationFee > 0 && (
-                      <span className="flex items-center gap-0.5 text-warning">
-                        <AlertTriangle className="size-3" />
-                        Manip.: {item.manipulationFee.toFixed(2).replace(".", ",")} €
+                        Montagegebühr:{" "}
+                        {(item.installationFee + item.manipulationFee)
+                          .toFixed(2)
+                          .replace(".", ",")} €
                       </span>
                     )}
                   </div>
@@ -212,19 +217,21 @@ export default function BestellungBestaetigungPage() {
                 {order.materialTotal.toFixed(2).replace(".", ",")} €
               </span>
             </div>
-            {order.installationTotal > 0 && (
+            {order.installationTotal + order.manipulationTotal > 0 && (
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Montagekosten</span>
+                <span className="text-muted-foreground">Montagegebühren</span>
                 <span className="font-medium">
-                  {order.installationTotal.toFixed(2).replace(".", ",")} €
+                  {(order.installationTotal + order.manipulationTotal)
+                    .toFixed(2)
+                    .replace(".", ",")} €
                 </span>
               </div>
             )}
             {order.manipulationTotal > 0 && (
-              <div className="flex justify-between text-warning">
+              <div className="flex justify-between text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <AlertTriangle className="size-3" />
-                  Manipulationsgebühr
+                  davon Manipulation bei Bestand
                 </span>
                 <span className="font-medium">
                   {order.manipulationTotal.toFixed(2).replace(".", ",")} €

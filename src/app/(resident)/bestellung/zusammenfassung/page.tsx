@@ -11,7 +11,6 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Loading } from "@/components/ui/loading";
 import {
   getOrderState,
@@ -104,7 +103,7 @@ export default function ZusammenfassungPage() {
       const items = selections.map((s) => ({
         windowId: s.windowId,
         productId: s.productId,
-        quantity: 1,
+        quantity: s.quantity ?? 1,
       }));
 
       const res = await fetch("/api/orders", {
@@ -130,6 +129,7 @@ export default function ZusammenfassungPage() {
   const breakdown = getPriceBreakdown();
   const vatAmount = breakdown.totalNet * 0.2;
   const totalGross = breakdown.totalNet * 1.2;
+  const displayedFeeWindowIds = new Set<string>();
 
   if (loading) return <Loading fullScreen text="Zusammenfassung wird geladen..." />;
 
@@ -180,6 +180,14 @@ export default function ZusammenfassungPage() {
           <div className="divide-y divide-border">
             {selections.map((selection, index) => {
               const win = windows[selection.windowId];
+              const selectionMountingFee =
+                selection.installationFee + selection.manipulationFee;
+              const showMountingFee =
+                selectionMountingFee > 0 &&
+                !displayedFeeWindowIds.has(selection.windowId);
+              if (showMountingFee) {
+                displayedFeeWindowIds.add(selection.windowId);
+              }
               return (
                 <div
                   key={`${selection.windowId}-${selection.productId}-${index}`}
@@ -211,24 +219,30 @@ export default function ZusammenfassungPage() {
                     </div>
                     {/* Preisaufschlüsselung pro Zeile */}
                     <div className="mt-1 flex flex-wrap gap-x-3 text-xs text-muted-foreground">
-                      <span>Mat.: {selection.unitPrice.toFixed(2).replace(".", ",")} €</span>
-                      {selection.installationFee > 0 && (
+                      <span>
+                        Mat.:{" "}
+                        {(selection.quantity ?? 1) > 1
+                          ? `${selection.quantity} × ${selection.unitPrice
+                              .toFixed(2)
+                              .replace(".", ",")} €`
+                          : `${selection.unitPrice.toFixed(2).replace(".", ",")} €`}
+                      </span>
+                      {showMountingFee && (
                         <span className="flex items-center gap-0.5">
                           <Wrench className="size-3" />
-                          Mont.: {selection.installationFee.toFixed(2).replace(".", ",")} €
-                        </span>
-                      )}
-                      {selection.manipulationFee > 0 && (
-                        <span className="flex items-center gap-0.5 text-warning">
-                          <AlertTriangle className="size-3" />
-                          Manip.: {selection.manipulationFee.toFixed(2).replace(".", ",")} €
+                          Montagegebühr pro Fenster:{" "}
+                          {selectionMountingFee
+                            .toFixed(2)
+                            .replace(".", ",")} €
                         </span>
                       )}
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
                     <span className="text-lg font-bold text-primary">
-                      {selection.totalPrice.toFixed(2).replace(".", ",")} €
+                      {(selection.unitPrice * (selection.quantity ?? 1))
+                        .toFixed(2)
+                        .replace(".", ",")} €
                     </span>
                     <Button
                       variant="ghost"
@@ -259,22 +273,24 @@ export default function ZusammenfassungPage() {
                 {breakdown.materialTotal.toFixed(2).replace(".", ",")} €
               </span>
             </div>
-            {breakdown.installationTotal > 0 && (
+            {breakdown.installationTotal + breakdown.manipulationTotal > 0 && (
               <div className="flex justify-between">
                 <span className="text-muted-foreground flex items-center gap-1">
                   <Wrench className="size-3" />
-                  Montagekosten ({(breakdown.installationTotal / 120).toFixed(0)} × 120 €)
+                  Montagegebühren pro Fenster
                 </span>
                 <span className="font-medium">
-                  {breakdown.installationTotal.toFixed(2).replace(".", ",")} €
+                  {(breakdown.installationTotal + breakdown.manipulationTotal)
+                    .toFixed(2)
+                    .replace(".", ",")} €
                 </span>
               </div>
             )}
             {breakdown.manipulationTotal > 0 && (
-              <div className="flex justify-between text-warning">
+              <div className="flex justify-between text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <AlertTriangle className="size-3" />
-                  Manipulationsgebühr ({(breakdown.manipulationTotal / 150).toFixed(0)} × 150 €)
+                  davon Manipulation bei Bestand
                 </span>
                 <span className="font-medium">
                   {breakdown.manipulationTotal.toFixed(2).replace(".", ",")} €

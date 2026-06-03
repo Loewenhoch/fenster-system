@@ -1,9 +1,12 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import {
+  getMountingFees,
+  getSunscreenQuantity,
+  isMountableCategory,
+} from "@/lib/pricing";
 import { NextResponse } from "next/server";
 
-const INSTALLATION_FEE = 120;
-const MANIPULATION_FEE = 150;
 const VAT_RATE = 0.2;
 
 interface OrderItemInput {
@@ -26,8 +29,10 @@ function getUnitPrice(
     priceSender1Ch: number | null;
     priceSender15Ch: number | null;
   },
-  productCategory: string
+  product: { category: string; unitPrice: number }
 ): number {
+  const productCategory = product.category;
+
   if (productCategory === "SUNSCREEN_MOTOR") {
     return window.priceMotorMaterial ?? 0;
   }
@@ -38,24 +43,16 @@ function getUnitPrice(
     return window.priceIsgWindow ?? window.priceIsgDoor ?? 0;
   }
   if (productCategory === "RECEIVER") {
-    return window.priceReceiver ?? 0;
+    return window.priceReceiver ?? product.unitPrice ?? 0;
   }
   if (productCategory === "SENDER_1CH") {
-    return window.priceSender1Ch ?? 0;
+    return window.priceSender1Ch ?? product.unitPrice ?? 0;
   }
   if (productCategory === "SENDER_15CH") {
-    return window.priceSender15Ch ?? 0;
+    return window.priceSender15Ch ?? product.unitPrice ?? 0;
   }
 
   return 0;
-}
-
-function isSunscreenProduct(category: string): boolean {
-  return (
-    category === "SUNSCREEN_MOTOR" ||
-    category === "SUNSCREEN_CORD" ||
-    category === "INSECT_SCREEN"
-  );
 }
 
 export async function GET() {
@@ -130,7 +127,10 @@ export async function POST(req: Request) {
     const productIds = [...new Set(items.map((i) => i.productId).filter(Boolean))];
 
     const windows = await prisma.window.findMany({
-      where: { id: { in: windowIds } },
+      where: {
+        id: { in: windowIds },
+        apartmentId: resident.apartmentId,
+      },
     });
     const products = await prisma.product.findMany({
       where: { id: { in: productIds } },
@@ -148,7 +148,7 @@ export async function POST(req: Request) {
     let installationTotal = 0;
     let manipulationTotal = 0;
 
-    const orderItemsData = items.map((item) => {
+    const orderItemsWithMeta = items.map((item) => {
       const window = windowMap.get(item.windowId);
       const product = productMap.get(item.productId);
 
@@ -159,32 +159,51 @@ export async function POST(req: Request) {
         throw new Error(`Produkt ${item.productId} nicht gefunden`);
       }
 
-      const unitPrice = getUnitPrice(window, product.category);
-      const quantity = item.quantity ?? 1;
+      const unitPrice = getUnitPrice(window, product);
+      const quantity = getSunscreenQuantity(window, product.category);
+      const materialLineTotal = unitPrice * quantity;
 
-      const installationFee = isSunscreenProduct(product.category)
-        ? INSTALLATION_FEE
-        : 0;
-      const manipulationFee = window.requiresManipulationFee
-        ? MANIPULATION_FEE
-        : 0;
-
-      const itemTotal = unitPrice + installationFee + manipulationFee;
-
-      materialTotal += unitPrice * quantity;
-      installationTotal += installationFee * quantity;
-      manipulationTotal += manipulationFee * quantity;
+      materialTotal += materialLineTotal;
 
       return {
         windowId: item.windowId,
         productId: item.productId,
         quantity,
         unitPrice,
-        totalPrice: itemTotal * quantity,
-        installationFee,
-        manipulationFee,
+        totalPrice: materialLineTotal,
+        installationFee: 0,
+        manipulationFee: 0,
+        isMountable: isMountableCategory(product.category),
       };
     });
+
+    const chargedWindowIds = new Set<string>();
+    for (const item of orderItemsWithMeta) {
+      if (!item.isMountable || chargedWindowIds.has(item.windowId)) continue;
+
+      const window = windowMap.get(item.windowId);
+      if (!window) continue;
+
+      const { installationFee, manipulationFee, mountingTotal } =
+        getMountingFees(window);
+
+      item.installationFee = installationFee;
+      item.manipulationFee = manipulationFee;
+      item.totalPrice += mountingTotal;
+      installationTotal += installationFee;
+      manipulationTotal += manipulationFee;
+      chargedWindowIds.add(item.windowId);
+    }
+
+    const orderItemsData = orderItemsWithMeta.map((item) => ({
+      windowId: item.windowId,
+      productId: item.productId,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      totalPrice: item.totalPrice,
+      installationFee: item.installationFee,
+      manipulationFee: item.manipulationFee,
+    }));
 
     const totalNet = materialTotal + installationTotal + manipulationTotal;
     const totalGross = totalNet * (1 + VAT_RATE);

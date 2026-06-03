@@ -24,7 +24,6 @@ import {
   type OrderSelection,
 } from "@/lib/order-storage";
 import {
-  ShoppingCart,
   ArrowRight,
   ArrowLeft,
   Sun,
@@ -45,8 +44,10 @@ interface MainProduct {
   category: string;
   type: "CORD" | "MOTOR" | "INSECT";
   unitPrice: number;
+  quantity: number;
   installationFee: number;
   manipulationFee: number;
+  materialTotal: number;
   totalPrice: number;
 }
 
@@ -166,10 +167,13 @@ export default function BestellungPage() {
           windowId,
           productId: product.id,
           productName: product.name,
+          category: product.category,
           unitPrice: product.unitPrice,
+          quantity: product.quantity,
           installationFee: product.installationFee,
           manipulationFee: product.manipulationFee,
-          totalPrice: product.totalPrice,
+          totalPrice: product.materialTotal,
+          isMountable: true,
         });
       }
       setSelections(getOrderState().selections);
@@ -186,10 +190,13 @@ export default function BestellungPage() {
           windowId,
           productId: accessory.id,
           productName: accessory.name,
+          category: accessory.category,
           unitPrice: accessory.unitPrice,
+          quantity: 1,
           installationFee: 0,
           manipulationFee: 0,
           totalPrice: accessory.unitPrice,
+          isMountable: false,
         });
       }
       setSelections(getOrderState().selections);
@@ -363,7 +370,7 @@ export default function BestellungPage() {
                                     )}
                                     <span className="truncate">{product.name}</span>
                                     <span className="ml-auto text-lg font-bold text-primary whitespace-nowrap">
-                                      {product.totalPrice.toFixed(2).replace(".", ",")} €
+                                      {product.materialTotal.toFixed(2).replace(".", ",")} €
                                     </span>
                                   </Label>
                                   {product.description && (
@@ -375,22 +382,21 @@ export default function BestellungPage() {
                                   <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground">
                                     <span>
                                       Material:{" "}
-                                      {product.unitPrice.toFixed(2).replace(".", ",")} €
+                                      {product.quantity > 1
+                                        ? `${product.quantity} × ${product.unitPrice
+                                            .toFixed(2)
+                                            .replace(".", ",")} € = ${product.materialTotal
+                                            .toFixed(2)
+                                            .replace(".", ",")} €`
+                                        : `${product.unitPrice
+                                            .toFixed(2)
+                                            .replace(".", ",")} €`}
                                     </span>
                                     {product.installationFee > 0 && (
                                       <span className="flex items-center gap-1">
                                         <Wrench className="size-3" />
-                                        Montage:{" "}
-                                        {product.installationFee
-                                          .toFixed(2)
-                                          .replace(".", ",")} €
-                                      </span>
-                                    )}
-                                    {product.manipulationFee > 0 && (
-                                      <span className="flex items-center gap-1 text-warning">
-                                        <AlertTriangle className="size-3" />
-                                        Manipulation:{" "}
-                                        {product.manipulationFee
+                                        Montagegebühr pro Fenster:{" "}
+                                        {(product.installationFee + product.manipulationFee)
                                           .toFixed(2)
                                           .replace(".", ",")} €
                                       </span>
@@ -471,7 +477,7 @@ export default function BestellungPage() {
                       win.mainProducts.some((p) => p.type === "MOTOR") && (
                         <p className="text-sm text-muted-foreground flex items-center gap-1">
                           <Radio className="size-3" />
-                          Wählen Sie "Sonnenschutz mit Motor" aus, um Zubehör
+                          Wählen Sie &quot;Sonnenschutz mit Motor&quot; aus, um Zubehör
                           (Funkempfänger, Handsender) hinzuzufügen.
                         </p>
                       )}
@@ -502,15 +508,17 @@ export default function BestellungPage() {
                   Material:{" "}
                   {breakdown.materialTotal.toFixed(2).replace(".", ",")} €
                 </div>
-                {breakdown.installationTotal > 0 && (
+                {breakdown.installationTotal + breakdown.manipulationTotal > 0 && (
                   <div>
-                    Montage:{" "}
-                    {breakdown.installationTotal.toFixed(2).replace(".", ",")} €
+                    Montagegebühren:{" "}
+                    {(breakdown.installationTotal + breakdown.manipulationTotal)
+                      .toFixed(2)
+                      .replace(".", ",")} €
                   </div>
                 )}
                 {breakdown.manipulationTotal > 0 && (
-                  <div className="text-warning">
-                    Manipulation:{" "}
+                  <div>
+                    davon Manipulation bei Bestand:{" "}
                     {breakdown.manipulationTotal.toFixed(2).replace(".", ",")} €
                   </div>
                 )}

@@ -1,9 +1,10 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import {
+  getMountingFees,
+  getSunscreenQuantity,
+} from "@/lib/pricing";
 import { NextResponse } from "next/server";
-
-const INSTALLATION_FEE = 120;
-const MANIPULATION_FEE = 150;
 
 // Hauptprodukte, die direkt auswählbar sind
 interface MainProduct {
@@ -13,8 +14,10 @@ interface MainProduct {
   category: string;
   type: "CORD" | "MOTOR" | "INSECT";
   unitPrice: number;
+  quantity: number;
   installationFee: number;
   manipulationFee: number;
+  materialTotal: number;
   totalPrice: number;
 }
 
@@ -36,6 +39,7 @@ interface WindowResponse {
   measureText: string;
   hasExistingSunscreen: boolean;
   requiresManipulationFee: boolean;
+  rekordTypeNew: string | null;
   isMotorPossible: boolean;
   isCordPossible: boolean;
   mainProducts: MainProduct[];
@@ -100,10 +104,10 @@ export async function GET() {
           const p = productMap.get("SUNSCREEN_CORD");
           if (p) {
             const unitPrice = window.priceCordMaterial;
-            const installationFee = INSTALLATION_FEE;
-            const manipulationFee = window.requiresManipulationFee
-              ? MANIPULATION_FEE
-              : 0;
+            const quantity = getSunscreenQuantity(window, p.category);
+            const materialTotal = unitPrice * quantity;
+            const { installationFee, manipulationFee, mountingTotal } =
+              getMountingFees(window);
             mainProducts.push({
               id: p.id,
               name: p.name,
@@ -111,9 +115,11 @@ export async function GET() {
               category: p.category,
               type: "CORD",
               unitPrice,
+              quantity,
               installationFee,
               manipulationFee,
-              totalPrice: unitPrice + installationFee + manipulationFee,
+              materialTotal,
+              totalPrice: materialTotal + mountingTotal,
             });
           }
         }
@@ -127,10 +133,10 @@ export async function GET() {
           const p = productMap.get("SUNSCREEN_MOTOR");
           if (p) {
             const unitPrice = window.priceMotorMaterial;
-            const installationFee = INSTALLATION_FEE;
-            const manipulationFee = window.requiresManipulationFee
-              ? MANIPULATION_FEE
-              : 0;
+            const quantity = getSunscreenQuantity(window, p.category);
+            const materialTotal = unitPrice * quantity;
+            const { installationFee, manipulationFee, mountingTotal } =
+              getMountingFees(window);
             mainProducts.push({
               id: p.id,
               name: p.name,
@@ -138,9 +144,11 @@ export async function GET() {
               category: p.category,
               type: "MOTOR",
               unitPrice,
+              quantity,
               installationFee,
               manipulationFee,
-              totalPrice: unitPrice + installationFee + manipulationFee,
+              materialTotal,
+              totalPrice: materialTotal + mountingTotal,
             });
           }
         }
@@ -149,20 +157,23 @@ export async function GET() {
         if (window.priceIsgWindow && window.priceIsgWindow > 0) {
           const p = productMap.get("INSECT_SCREEN");
           if (p) {
-            const installationFee = INSTALLATION_FEE;
-            const manipulationFee = window.requiresManipulationFee
-              ? MANIPULATION_FEE
-              : 0;
+            const unitPrice = window.priceIsgWindow;
+            const quantity = 1;
+            const materialTotal = unitPrice * quantity;
+            const { installationFee, manipulationFee, mountingTotal } =
+              getMountingFees(window);
             mainProducts.push({
               id: p.id,
               name: p.name,
               description: p.description,
               category: p.category,
               type: "INSECT",
-              unitPrice: window.priceIsgWindow,
+              unitPrice,
+              quantity,
               installationFee,
               manipulationFee,
-              totalPrice: window.priceIsgWindow + installationFee + manipulationFee,
+              materialTotal,
+              totalPrice: materialTotal + mountingTotal,
             });
           }
         }
@@ -212,6 +223,7 @@ export async function GET() {
           measureText: window.measureText,
           hasExistingSunscreen: window.hasExistingSunscreen,
           requiresManipulationFee: window.requiresManipulationFee,
+          rekordTypeNew: window.rekordTypeNew,
           isMotorPossible: window.isMotorPossible,
           isCordPossible: window.isCordPossible,
           mainProducts,
