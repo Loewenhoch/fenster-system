@@ -23,6 +23,25 @@ function parseIntSafe(val: unknown): number | null {
   return isNaN(n) ? null : n;
 }
 
+function normalizeTopNumber(topRaw: string): string {
+  let top = topRaw.trim();
+  if (!top.toLowerCase().startsWith("top ")) {
+    top = `Top ${top}`;
+  }
+  // "Top 37-39" -> "Top 37/38/39"
+  const rangeMatch = top.match(/^Top\s+(\d+)-(\d+)$/i);
+  if (rangeMatch) {
+    const start = parseInt(rangeMatch[1]);
+    const end = parseInt(rangeMatch[2]);
+    if (end > start) {
+      const parts: string[] = [];
+      for (let i = start; i <= end; i++) parts.push(String(i));
+      return `Top ${parts.join("/")}`;
+    }
+  }
+  return top;
+}
+
 function isNichtMoeglich(val: unknown): boolean {
   if (val === null || val === undefined) return false;
   return String(val).toLowerCase().includes("nicht möglich");
@@ -64,8 +83,7 @@ async function importApartmentsAndOwners(buildings: { b64: any; b66: any }) {
 
     const houseNum = String(haus).trim();
     const building = houseNum === "66" ? buildings.b66 : buildings.b64;
-    const topRaw = String(top).trim();
-    const topNumber = topRaw.toLowerCase().startsWith("top ") ? topRaw : `Top ${topRaw}`;
+    const topNumber = normalizeTopNumber(String(top));
     const floor = stock ? String(stock).trim() : "";
     const apartmentType = row[41] ? String(row[41]).trim() : null;
     const sizeSqm = parseFloatSafe(row[44]);
@@ -84,7 +102,9 @@ async function importApartmentsAndOwners(buildings: { b64: any; b66: any }) {
     const e1Nachname = row[17] ? String(row[17]).trim() : null;
     const e1Tel = row[19] ? String(row[19]).trim() : null;
     const e1EmailRaw = row[20] ? String(row[20]).trim() : null;
-    const e1Email = e1EmailRaw && e1EmailRaw.includes("@") ? e1EmailRaw.split(";")[0].trim() : null;
+    const e1Email = e1EmailRaw && e1EmailRaw.includes("@")
+      ? e1EmailRaw.split(";")[0].trim().split(/\s+/)[0]
+      : null;
 
     if (e1Vorname || e1Nachname) {
       const loginEmail = e1Email || `e1_${apartment.id}@placeholder.local`;
@@ -216,8 +236,7 @@ async function importWindowsV6(buildings: { b64: any; b66: any }) {
 
     const houseNum = String(haus).trim();
     const building = houseNum === "66" ? buildings.b66 : buildings.b64;
-    const topRaw = String(top).trim();
-    const topNumber = topRaw.toLowerCase().startsWith("top ") ? topRaw : `Top ${topRaw}`;
+    const topNumber = normalizeTopNumber(String(top));
 
     const apartment = await prisma.apartment.findUnique({
       where: { buildingId_topNumber: { buildingId: building.id, topNumber } },
