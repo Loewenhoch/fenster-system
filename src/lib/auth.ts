@@ -57,10 +57,8 @@ export const {
         const primaryLink = resident.apartmentLinks.find((l) => l.isPrimaryContact)
           || resident.apartmentLinks[0];
 
-        // Admin-Rolle falls explizit gesetzt, sonst Rolle aus erster Wohnungs-Verknüpfung
-        const role = resident.apartmentLinks.some((l) => l.role === "ADMIN")
-          ? "ADMIN"
-          : primaryLink?.role || "OWNER_PRIMARY";
+        // Admin-Rolle falls Resident als Admin markiert, sonst Eigentümer-Rolle
+        const role = resident.isAdmin ? "ADMIN" : primaryLink?.role || "OWNER";
 
         return {
           id: resident.id,

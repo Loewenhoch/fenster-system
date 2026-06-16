@@ -50,6 +50,7 @@ model Resident {
   magicLinkToken   String?             @unique
   magicLinkExpires DateTime?
   loginEnabled     Boolean             @default(false)
+  isAdmin          Boolean             @default(false)
   lastLoginAt      DateTime?
   createdAt        DateTime            @default(now())
   updatedAt        DateTime            @updatedAt

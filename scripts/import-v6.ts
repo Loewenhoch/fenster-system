@@ -326,7 +326,7 @@ async function createAdminUser() {
     create: {
       firstName: "Admin", lastName: "System",
       loginEmail: "admin@starhembergstr.at",
-      passwordHash, loginEnabled: true,
+      passwordHash, loginEnabled: true, isAdmin: true,
     },
   });
 
