@@ -51,3 +51,7 @@ prisma/dev.db.backup
 dev.db
 
 .vercel
+
+# temporary artifacts from permission repair
+.git.broken-root/
+.next.old/
