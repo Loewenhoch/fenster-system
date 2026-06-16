@@ -69,7 +69,7 @@ export default function AdminWohnungenPage() {
                       <TableCell>{a.building.houseNumber}</TableCell>
                       <TableCell className="font-medium">{a.topNumber}</TableCell>
                       <TableCell>{a.floor}</TableCell>
-                      <TableCell>{a.residents.length}</TableCell>
+                      <TableCell>{a.residentLinks?.length || 0}</TableCell>
                       <TableCell>{a.windows.length}</TableCell>
                       <TableCell>
                         {hasOrder ? (

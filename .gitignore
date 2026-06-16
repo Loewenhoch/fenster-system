@@ -38,6 +38,13 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
+
+# local sqlite artifacts & backups
+/prisma/dev.db.backup*
+/prisma/dev.db.test
+
+# generated credentials (contains plaintext passwords)
+zugangsdaten-accounts.csv
 next-env.d.ts
 
 /lib/generated/prisma

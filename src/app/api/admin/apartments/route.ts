@@ -9,7 +9,16 @@ export async function GET() {
   const apartments = await prisma.apartment.findMany({
     include: {
       building: true,
-      residents: { select: { id: true, firstName: true, lastName: true, role: true, loginEnabled: true } },
+      residentLinks: {
+        select: {
+          id: true,
+          role: true,
+          isPrimaryContact: true,
+          resident: {
+            select: { id: true, firstName: true, lastName: true, loginEnabled: true },
+          },
+        },
+      },
       windows: { select: { id: true } },
       orders: { select: { id: true, status: true }, orderBy: { createdAt: "desc" }, take: 1 },
     },

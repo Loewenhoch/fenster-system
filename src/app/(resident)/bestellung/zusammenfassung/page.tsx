@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,8 +43,11 @@ interface WindowInfo {
 const STEP = 2;
 const TOTAL_STEPS = 3;
 
-export default function ZusammenfassungPage() {
+function ZusammenfassungContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const apartmentId = searchParams.get("apartmentId") || "";
+
   const [selections, setLocalSelections] = useState<OrderSelection[]>([]);
   const [windows, setWindows] = useState<Record<string, WindowInfo>>({});
   const [loading, setLoading] = useState(true);
@@ -53,15 +56,20 @@ export default function ZusammenfassungPage() {
 
   useEffect(() => {
     async function init() {
-      const state = getOrderState();
+      if (!apartmentId) {
+        router.replace("/dashboard");
+        return;
+      }
+
+      const state = getOrderState(apartmentId);
       if (state.selections.length === 0) {
-        router.replace("/bestellung");
+        router.replace(`/bestellung?apartmentId=${apartmentId}`);
         return;
       }
       setLocalSelections(state.selections);
 
       try {
-        const res = await fetch("/api/apartments/current/windows");
+        const res = await fetch(`/api/apartments/current/windows?apartmentId=${apartmentId}`);
         if (res.ok) {
           const data = await res.json();
           const winMap: Record<string, WindowInfo> = {};
@@ -76,9 +84,10 @@ export default function ZusammenfassungPage() {
       setLoading(false);
     }
     init();
-  }, [router]);
+  }, [router, apartmentId]);
 
   const handleRemove = (windowId: string, productId: string) => {
+    if (!apartmentId) return;
     const removedSelection = selections.find(
       (s) => s.windowId === windowId && s.productId === productId
     );
@@ -99,14 +108,18 @@ export default function ZusammenfassungPage() {
     }
 
     setLocalSelections(newSelections);
-    setSelections(newSelections);
+    setSelections(apartmentId, newSelections);
     if (newSelections.length === 0) {
       clearOrderState();
-      router.replace("/bestellung");
+      router.replace(`/bestellung?apartmentId=${apartmentId}`);
     }
   };
 
   const handleContinue = async () => {
+    if (!apartmentId) {
+      setError("Keine Wohnung ausgewählt.");
+      return;
+    }
     if (selections.length === 0) {
       setError("Bitte wählen Sie mindestens ein Produkt aus.");
       return;
@@ -117,7 +130,10 @@ export default function ZusammenfassungPage() {
       const existingRes = await fetch("/api/orders");
       if (existingRes.ok) {
         const orders = await existingRes.json();
-        const draftOrder = orders.find((o: { status: string }) => o.status === "DRAFT");
+        const draftOrder = orders.find(
+          (o: { status: string; apartmentId: string }) =>
+            o.status === "DRAFT" && o.apartmentId === apartmentId
+        );
         if (draftOrder) {
           // Es gibt bereits eine DRAFT-Order → direkt zur Bestätigung
           clearOrderState();
@@ -142,7 +158,7 @@ export default function ZusammenfassungPage() {
       const res = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items }),
+        body: JSON.stringify({ items, apartmentId }),
       });
 
       if (!res.ok) {
@@ -348,7 +364,7 @@ export default function ZusammenfassungPage() {
 
       {/* Aktionen */}
       <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
-        <Link href="/bestellung">
+        <Link href={`/bestellung?apartmentId=${apartmentId}`}>
           <Button variant="outline" size="lg" className="btn-lg gap-2 w-full sm:w-auto">
             <ArrowLeft className="size-5" />
             Zurück
@@ -365,5 +381,13 @@ export default function ZusammenfassungPage() {
         </Button>
       </div>
     </div>
+  );
+}
+
+export default function ZusammenfassungPage() {
+  return (
+    <Suspense fallback={<Loading fullScreen text="Wird geladen..." />}>
+      <ZusammenfassungContent />
+    </Suspense>
   );
 }

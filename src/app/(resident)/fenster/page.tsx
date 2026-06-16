@@ -31,42 +31,63 @@ import {
 export default async function FensterPage({
   searchParams,
 }: {
-  searchParams: Promise<{ filter?: string }>;
+  searchParams: Promise<{ filter?: string; apartmentId?: string }>;
 }) {
   const session = await auth();
 
-  if (!session?.user?.apartmentId) {
+  if (!session?.user?.apartmentIds?.length) {
     redirect("/login");
   }
 
   const params = await searchParams;
   const filter = params.filter;
+  const requestedApartmentId = params.apartmentId;
 
   const resident = await prisma.resident.findUnique({
     where: { id: session.user.id },
     include: {
-      apartment: {
+      apartmentLinks: {
+        orderBy: { createdAt: "asc" },
         include: {
-          building: true,
-          windows: {
-            orderBy: { windowNumber: "asc" },
+          apartment: {
+            include: {
+              building: true,
+              windows: {
+                orderBy: { windowNumber: "asc" },
+              },
+            },
           },
         },
       },
     },
   });
 
-  if (!resident?.apartment) {
+  if (!resident?.apartmentLinks?.length) {
     redirect("/login");
   }
 
-  const windows = resident.apartment.windows;
+  const apartmentLinks = resident.apartmentLinks;
+  const multipleApartments = apartmentLinks.length > 1;
+
+  // Wohnung auswählen: entweder per URL-Parameter, sonst Primary oder erste
+  let selectedLink = apartmentLinks.find(
+    (l) => l.apartmentId === requestedApartmentId
+  );
+  if (!selectedLink) {
+    selectedLink =
+      apartmentLinks.find((l) => l.isPrimaryContact) || apartmentLinks[0];
+  }
+
+  const apartment = selectedLink.apartment;
+  const windows = apartment.windows;
   const filteredWindows = filter
     ? windows.filter((w) => {
         if (filter === "strasse")
-          return w.location.toLowerCase().includes("straße") || w.location.toLowerCase().includes("strasse");
-        if (filter === "hof")
-          return w.location.toLowerCase().includes("hof");
+          return (
+            w.location.toLowerCase().includes("straße") ||
+            w.location.toLowerCase().includes("strasse")
+          );
+        if (filter === "hof") return w.location.toLowerCase().includes("hof");
         return true;
       })
     : windows;
@@ -91,10 +112,44 @@ export default async function FensterPage({
         </p>
       </div>
 
+      {/* Wohnungsauswahl bei mehreren Wohnungen */}
+      {multipleApartments && (
+        <div className="flex flex-wrap gap-2">
+          {apartmentLinks.map((link) => {
+            const apt = link.apartment;
+            const isActive = apt.id === apartment.id;
+            return (
+              <a
+                key={apt.id}
+                href={`/fenster?apartmentId=${apt.id}${filter ? `&filter=${filter}` : ""}`}
+                className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-base font-medium transition-colors min-h-[48px] ${
+                  isActive
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                }`}
+              >
+                <Home className="size-4" />
+                {apt.building.houseNumber} {apt.topNumber}
+              </a>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Info zur aktuellen Wohnung */}
+      <div className="rounded-lg bg-secondary p-3 text-sm text-muted-foreground">
+        Aktuelle Wohnung:{" "}
+        <span className="font-semibold text-foreground">
+          Haus {apartment.building.houseNumber}, {apartment.topNumber}
+        </span>
+        {" · "}
+        {windows.length} Fenster
+      </div>
+
       {/* Filter */}
       <div className="flex flex-wrap gap-3">
         <a
-          href="/fenster"
+          href={`/fenster?apartmentId=${apartment.id}`}
           className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-base font-medium transition-colors min-h-[48px] ${
             !filter
               ? "bg-primary text-primary-foreground"
@@ -105,7 +160,7 @@ export default async function FensterPage({
           Alle ({windows.length})
         </a>
         <a
-          href="/fenster?filter=strasse"
+          href={`/fenster?apartmentId=${apartment.id}&filter=strasse`}
           className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-base font-medium transition-colors min-h-[48px] ${
             filter === "strasse"
               ? "bg-primary text-primary-foreground"
@@ -116,7 +171,7 @@ export default async function FensterPage({
           Straßenseite ({strasseCount})
         </a>
         <a
-          href="/fenster?filter=hof"
+          href={`/fenster?apartmentId=${apartment.id}&filter=hof`}
           className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-base font-medium transition-colors min-h-[48px] ${
             filter === "hof"
               ? "bg-primary text-primary-foreground"
@@ -185,10 +240,7 @@ export default async function FensterPage({
                         </Badge>
                       )}
                       {window.hasElectricSunscreen && (
-                        <Badge
-                          variant="secondary"
-                          className="ml-1 text-sm"
-                        >
+                        <Badge variant="secondary" className="ml-1 text-sm">
                           <Zap className="mr-1 size-3" />
                           elektrisch
                         </Badge>
@@ -246,8 +298,8 @@ export default async function FensterPage({
         <CardContent className="py-6">
           <p className="text-base text-muted-foreground">
             <strong className="text-foreground">Hinweis:</strong> Die
-            verfügbaren Sonnenschutz-Produkte für jedes Fenster sehen Sie im Bestellvorgang.
-            Nicht alle Produkte sind für jedes Fenster verfügbar.
+            verfügbaren Sonnenschutz-Produkte für jedes Fenster sehen Sie im
+            Bestellvorgang. Nicht alle Produkte sind für jedes Fenster verfügbar.
           </p>
         </CardContent>
       </Card>

@@ -1,9 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import {
-  getMountingFees,
-  getSunscreenQuantity,
-} from "@/lib/pricing";
+import { getMountingFees, getSunscreenQuantity } from "@/lib/pricing";
 import { NextResponse } from "next/server";
 
 // Hauptprodukte, die direkt auswählbar sind
@@ -46,19 +43,34 @@ interface WindowResponse {
   accessories: Accessory[];
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const session = await auth();
 
-    if (!session?.user?.apartmentId) {
+    if (!session?.user?.apartmentIds?.length) {
       return NextResponse.json(
         { error: "Nicht authentifiziert" },
         { status: 401 }
       );
     }
 
+    const { searchParams } = new URL(request.url);
+    let apartmentId = searchParams.get("apartmentId");
+
+    // Falls keine Wohnung angegeben: Primary oder erste verwenden
+    if (!apartmentId) {
+      apartmentId = session.user.primaryApartmentId || session.user.apartmentIds[0];
+    }
+
+    if (!apartmentId || !session.user.apartmentIds.includes(apartmentId)) {
+      return NextResponse.json(
+        { error: "Zugriff auf diese Wohnung nicht erlaubt" },
+        { status: 403 }
+      );
+    }
+
     const apartment = await prisma.apartment.findUnique({
-      where: { id: session.user.apartmentId },
+      where: { id: apartmentId },
       include: {
         windows: {
           orderBy: { windowNumber: "asc" },
@@ -70,13 +82,6 @@ export async function GET() {
       return NextResponse.json(
         { error: "Wohnung nicht gefunden" },
         { status: 404 }
-      );
-    }
-
-    if (apartment.id !== session.user.apartmentId) {
-      return NextResponse.json(
-        { error: "Zugriff auf diese Wohnung nicht erlaubt" },
-        { status: 403 }
       );
     }
 
@@ -93,7 +98,6 @@ export async function GET() {
 
         // === HAUPTPRODUKTE ===
         // Verfügbarkeit: Preis > 0 UND technisch möglich ("nicht möglich" steht nicht in Excel)
-        // Keine Prüfung auf "sunscreenInterest" – das steuert nicht die Verfügbarkeit
 
         // 1. Behang mit Gurt
         if (

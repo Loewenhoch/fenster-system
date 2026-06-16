@@ -16,17 +16,18 @@ export interface OrderSelection {
 }
 
 export interface OrderState {
+  apartmentId?: string;
   selections: OrderSelection[];
 }
 
 const STORAGE_KEY = "sta-fenster-bestellung";
-const STATE_VERSION = 1;
+const STATE_VERSION = 2;
 
 interface StoredState extends OrderState {
   _version?: number;
 }
 
-export function getOrderState(): OrderState {
+export function getOrderState(expectedApartmentId?: string): OrderState {
   if (typeof window === "undefined") return { selections: [] };
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -37,19 +38,29 @@ export function getOrderState(): OrderState {
       console.warn("Order state version mismatch, resetting");
       return { selections: [] };
     }
-    return { selections: parsed.selections || [] };
+    // Wenn eine andere Wohnung erwartet wird: State zurücksetzen
+    if (expectedApartmentId && parsed.apartmentId !== expectedApartmentId) {
+      return { selections: [] };
+    }
+    return {
+      apartmentId: parsed.apartmentId,
+      selections: parsed.selections || [],
+    };
   } catch {
     return { selections: [] };
   }
 }
 
-function getStoredState(): StoredState {
+function getStoredState(expectedApartmentId?: string): StoredState {
   if (typeof window === "undefined") return { selections: [], _version: STATE_VERSION };
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return { selections: [], _version: STATE_VERSION };
     const parsed = JSON.parse(raw) as StoredState;
     if (parsed._version && parsed._version !== STATE_VERSION) {
+      return { selections: [], _version: STATE_VERSION };
+    }
+    if (expectedApartmentId && parsed.apartmentId !== expectedApartmentId) {
       return { selections: [], _version: STATE_VERSION };
     }
     return { ...parsed, _version: STATE_VERSION };
@@ -74,8 +85,17 @@ export function clearOrderState(): void {
   localStorage.removeItem(STORAGE_KEY);
 }
 
-export function addSelection(selection: OrderSelection): void {
-  const state = getStoredState();
+export function initOrderState(apartmentId: string): void {
+  if (typeof window === "undefined") return;
+  const state = getStoredState(apartmentId);
+  if (state.apartmentId !== apartmentId) {
+    setOrderState({ apartmentId, selections: [] });
+  }
+}
+
+export function addSelection(selection: OrderSelection, apartmentId: string): void {
+  const state = getStoredState(apartmentId);
+  state.apartmentId = apartmentId;
   const existingIndex = state.selections.findIndex(
     (s) => s.windowId === selection.windowId && s.productId === selection.productId
   );
@@ -87,8 +107,9 @@ export function addSelection(selection: OrderSelection): void {
   setOrderState(state);
 }
 
-export function removeSelection(windowId: string, productId: string): void {
-  const state = getStoredState();
+export function removeSelection(windowId: string, productId: string, apartmentId: string): void {
+  const state = getStoredState(apartmentId);
+  state.apartmentId = apartmentId;
   state.selections = state.selections.filter(
     (s) => !(s.windowId === windowId && s.productId === productId)
   );
@@ -100,9 +121,11 @@ export function removeSelection(windowId: string, productId: string): void {
  * Verhindert Race Conditions bei schnellen aufeinanderfolgenden Updates.
  */
 export function batchUpdateSelections(
+  apartmentId: string,
   updates: ({ type: "add"; selection: OrderSelection } | { type: "remove"; windowId: string; productId: string })[]
 ): void {
-  const state = getStoredState();
+  const state = getStoredState(apartmentId);
+  state.apartmentId = apartmentId;
   for (const update of updates) {
     if (update.type === "add") {
       const existingIndex = state.selections.findIndex(
@@ -122,8 +145,8 @@ export function batchUpdateSelections(
   setOrderState(state);
 }
 
-export function setSelections(selections: OrderSelection[]): void {
-  setOrderState({ selections });
+export function setSelections(apartmentId: string, selections: OrderSelection[]): void {
+  setOrderState({ apartmentId, selections });
 }
 
 export function getSubtotal(): number {

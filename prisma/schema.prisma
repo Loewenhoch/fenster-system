@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -16,9 +16,9 @@ model Building {
 }
 
 model Apartment {
-  id            String    @id @default(cuid())
+  id            String              @id @default(cuid())
   buildingId    String
-  building      Building  @relation(fields: [buildingId], references: [id])
+  building      Building            @relation(fields: [buildingId], references: [id])
   topNumber     String
   floor         String
   apartmentType String?
@@ -28,36 +28,48 @@ model Apartment {
   loggiaSizeSqm Float?
   heatingType   String?
   notes         String?
-  residents     Resident[]
+  residentLinks ResidentApartment[]
   windows       Window[]
   orders        Order[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
 
   @@unique([buildingId, topNumber])
 }
 
 model Resident {
-  id               String    @id @default(cuid())
-  apartmentId      String
-  apartment        Apartment @relation(fields: [apartmentId], references: [id])
-  role             String    @default("OWNER_PRIMARY")
+  id               String              @id @default(cuid())
   salutation       String?
   title            String?
   firstName        String?
   lastName         String?
   phone            String?
-  email            String?
-  loginEmail       String?   @unique
+  email            String?             // allgemeine Kontakt-E-Mail (kann mehrfach vorkommen)
+  loginEmail       String?             @unique
   passwordHash     String?
-  magicLinkToken   String?   @unique
+  magicLinkToken   String?             @unique
   magicLinkExpires DateTime?
-  isPrimaryContact Boolean   @default(false)
-  loginEnabled     Boolean   @default(false)
+  loginEnabled     Boolean             @default(false)
   lastLoginAt      DateTime?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  orders           Order[]
+  apartmentLinks   ResidentApartment[]
+}
+
+// Verknüpft Residenten mit ihren Wohnungen (1:n, da ein Eigentümer mehrere Wohnungen haben kann)
+model ResidentApartment {
+  id               String    @id @default(cuid())
+  residentId       String
+  resident         Resident  @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  apartmentId      String
+  apartment        Apartment @relation(fields: [apartmentId], references: [id], onDelete: Cascade)
+  role             String    @default("OWNER_PRIMARY")
+  isPrimaryContact Boolean   @default(false)
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
-  orders           Order[]
+
+  @@unique([residentId, apartmentId])
 }
 
 model Window {
@@ -78,7 +90,7 @@ model Window {
   rekordTypeOld         String?
   rekordTypeNew         String?
   isOrderable           Boolean     @default(true)
-  
+
   // Preisfelder aus Excel V6
   priceMotorComplete    Float?
   priceCordComplete     Float?
@@ -90,16 +102,16 @@ model Window {
   priceReceiver         Float?      // Funkempfänger
   priceSender15Ch       Float?      // Handsender 15 Kanal
   priceSender1Ch        Float?      // Handsender 1 Kanal
-  
+
   // Verfügbarkeitsflags
   isMotorPossible       Boolean     @default(true)
   isCordPossible        Boolean     @default(true)
   isIsgWindowPossible   Boolean     @default(true)
   isIsgDoorPossible     Boolean     @default(true)
-  
+
   // Gebühren
   requiresManipulationFee Boolean   @default(false)  // +150€ wenn Bestand SS
-  
+
   createdAt             DateTime    @default(now())
   updatedAt             DateTime    @updatedAt
   orderItems            OrderItem[]

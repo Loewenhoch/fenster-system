@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, useCallback, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -18,6 +18,7 @@ import { Loading } from "@/components/ui/loading";
 import { ErrorState } from "@/components/ui/error";
 import {
   getOrderState,
+  initOrderState,
   addSelection,
   removeSelection,
   getPriceBreakdown,
@@ -77,8 +78,11 @@ interface WindowWithProducts {
 const STEP = 1;
 const TOTAL_STEPS = 3;
 
-export default function BestellungPage() {
+function BestellungContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const apartmentId = searchParams.get("apartmentId") || "";
+
   const [windows, setWindows] = useState<WindowWithProducts[]>([]);
   const [selections, setSelections] = useState<OrderSelection[]>([]);
   const [expandedWindows, setExpandedWindows] = useState<Set<string>>(new Set());
@@ -87,13 +91,21 @@ export default function BestellungPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!apartmentId) {
+      setError("Keine Wohnung ausgewählt.");
+      setLoading(false);
+      return;
+    }
+
+    initOrderState(apartmentId);
+
     async function fetchData() {
       try {
-        const res = await fetch("/api/apartments/current/windows");
+        const res = await fetch(`/api/apartments/current/windows?apartmentId=${apartmentId}`);
         if (!res.ok) throw new Error("Fenster konnten nicht geladen werden");
         const data = await res.json();
         setWindows(data.windows);
-        const saved = getOrderState();
+        const saved = getOrderState(apartmentId);
         setSelections(saved.selections);
       } catch (e) {
         setError(e instanceof Error ? e.message : "Unbekannter Fehler");
@@ -102,12 +114,12 @@ export default function BestellungPage() {
       }
     }
     fetchData();
-  }, []);
+  }, [apartmentId]);
 
   // Initiales Expand: Fenster mit Auswahl automatisch aufklappen (nur einmal)
   useEffect(() => {
     if (initialExpandDone || windows.length === 0) return;
-    const saved = getOrderState();
+    const saved = getOrderState(apartmentId);
     if (saved.selections.length > 0) {
       const windowIdsWithSelection = new Set(saved.selections.map((s) => s.windowId));
       setExpandedWindows((prev) => {
@@ -117,7 +129,7 @@ export default function BestellungPage() {
       });
     }
     setInitialExpandDone(true);
-  }, [windows, initialExpandDone]);
+  }, [windows, initialExpandDone, apartmentId]);
 
   // Prüfe ob für ein Fenster ein Motor-Produkt ausgewählt wurde
   const isMotorSelected = useCallback(
@@ -144,14 +156,15 @@ export default function BestellungPage() {
 
   const handleToggleMain = useCallback(
     (windowId: string, product: MainProduct) => {
+      if (!apartmentId) return;
       if (isSelected(windowId, product.id)) {
-        removeSelection(windowId, product.id);
+        removeSelection(windowId, product.id, apartmentId);
         // Wenn Motor abgewählt wird, auch alle Zubehör für dieses Fenster entfernen
         if (product.type === "MOTOR") {
           const win = windows.find((w) => w.id === windowId);
           if (win) {
             win.accessories.forEach((acc) => {
-              removeSelection(windowId, acc.id);
+              removeSelection(windowId, acc.id, apartmentId);
             });
           }
         }
@@ -162,7 +175,7 @@ export default function BestellungPage() {
           if (win) {
             const cordProduct = win.mainProducts.find((p) => p.type === "CORD");
             if (cordProduct && isSelected(windowId, cordProduct.id)) {
-              removeSelection(windowId, cordProduct.id);
+              removeSelection(windowId, cordProduct.id, apartmentId);
             }
           }
         }
@@ -172,52 +185,59 @@ export default function BestellungPage() {
           if (win) {
             const motorProduct = win.mainProducts.find((p) => p.type === "MOTOR");
             if (motorProduct && isSelected(windowId, motorProduct.id)) {
-              removeSelection(windowId, motorProduct.id);
+              removeSelection(windowId, motorProduct.id, apartmentId);
               win.accessories.forEach((acc) => {
-                removeSelection(windowId, acc.id);
+                removeSelection(windowId, acc.id, apartmentId);
               });
             }
           }
         }
-        addSelection({
-          windowId,
-          productId: product.id,
-          productName: product.name,
-          category: product.category,
-          unitPrice: product.unitPrice,
-          quantity: product.quantity,
-          installationFee: product.installationFee,
-          manipulationFee: product.manipulationFee,
-          totalPrice: product.materialTotal,
-          isMountable: true,
-        });
+        addSelection(
+          {
+            windowId,
+            productId: product.id,
+            productName: product.name,
+            category: product.category,
+            unitPrice: product.unitPrice,
+            quantity: product.quantity,
+            installationFee: product.installationFee,
+            manipulationFee: product.manipulationFee,
+            totalPrice: product.materialTotal,
+            isMountable: true,
+          },
+          apartmentId
+        );
       }
-      setSelections(getOrderState().selections);
+      setSelections(getOrderState(apartmentId).selections);
     },
-    [isSelected, windows]
+    [isSelected, windows, apartmentId]
   );
 
   const handleToggleAccessory = useCallback(
     (windowId: string, accessory: Accessory) => {
+      if (!apartmentId) return;
       if (isSelected(windowId, accessory.id)) {
-        removeSelection(windowId, accessory.id);
+        removeSelection(windowId, accessory.id, apartmentId);
       } else {
-        addSelection({
-          windowId,
-          productId: accessory.id,
-          productName: accessory.name,
-          category: accessory.category,
-          unitPrice: accessory.unitPrice,
-          quantity: 1,
-          installationFee: 0,
-          manipulationFee: 0,
-          totalPrice: accessory.unitPrice,
-          isMountable: false,
-        });
+        addSelection(
+          {
+            windowId,
+            productId: accessory.id,
+            productName: accessory.name,
+            category: accessory.category,
+            unitPrice: accessory.unitPrice,
+            quantity: 1,
+            installationFee: 0,
+            manipulationFee: 0,
+            totalPrice: accessory.unitPrice,
+            isMountable: false,
+          },
+          apartmentId
+        );
       }
-      setSelections(getOrderState().selections);
+      setSelections(getOrderState(apartmentId).selections);
     },
-    [isSelected]
+    [isSelected, apartmentId]
   );
 
   const toggleExpand = (windowId: string) => {
@@ -246,7 +266,7 @@ export default function BestellungPage() {
       setError("Bitte wählen Sie mindestens einen Sonnenschutz oder Insektenschutz aus.");
       return;
     }
-    router.push("/bestellung/zusammenfassung");
+    router.push(`/bestellung/zusammenfassung?apartmentId=${apartmentId}`);
   };
 
   if (loading) return <Loading fullScreen text="Fenster werden geladen..." />;
@@ -560,5 +580,13 @@ export default function BestellungPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function BestellungPage() {
+  return (
+    <Suspense fallback={<Loading fullScreen text="Wird geladen..." />}>
+      <BestellungContent />
+    </Suspense>
   );
 }

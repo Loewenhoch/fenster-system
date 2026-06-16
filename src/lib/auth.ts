@@ -29,7 +29,12 @@ export const {
 
         const resident = await prisma.resident.findUnique({
           where: { loginEmail: email.toLowerCase() },
-          include: { apartment: { include: { building: true } } },
+          include: {
+            apartmentLinks: {
+              orderBy: { createdAt: "asc" },
+              include: { apartment: { include: { building: true } } },
+            },
+          },
         });
 
         if (!resident || !resident.passwordHash || !resident.loginEnabled) {
@@ -48,14 +53,22 @@ export const {
           // Ignoriere DB-Fehler bei lastLoginAt-Update
         });
 
-        const role = resident.role;
+        const apartmentIds = resident.apartmentLinks.map((l) => l.apartmentId);
+        const primaryLink = resident.apartmentLinks.find((l) => l.isPrimaryContact)
+          || resident.apartmentLinks[0];
+
+        // Admin-Rolle falls explizit gesetzt, sonst Rolle aus erster Wohnungs-Verknüpfung
+        const role = resident.apartmentLinks.some((l) => l.role === "ADMIN")
+          ? "ADMIN"
+          : primaryLink?.role || "OWNER_PRIMARY";
 
         return {
           id: resident.id,
           email: resident.loginEmail,
           name: `${resident.firstName || ""} ${resident.lastName || ""}`.trim(),
           role,
-          apartmentId: resident.apartmentId,
+          apartmentIds,
+          primaryApartmentId: primaryLink?.apartmentId || null,
         };
       },
     }),
@@ -65,14 +78,16 @@ export const {
       if (token.sub && session.user) {
         session.user.id = token.sub;
         session.user.role = token.role as string;
-        session.user.apartmentId = token.apartmentId as string;
+        session.user.apartmentIds = (token.apartmentIds as string[]) || [];
+        session.user.primaryApartmentId = token.primaryApartmentId as string | null | undefined;
       }
       return session;
     },
     async jwt({ token, user }) {
       if (user) {
         token.role = user.role;
-        token.apartmentId = user.apartmentId;
+        token.apartmentIds = user.apartmentIds;
+        token.primaryApartmentId = user.primaryApartmentId;
       }
       return token;
     },

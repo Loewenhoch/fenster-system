@@ -7,8 +7,31 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Search, Users } from "lucide-react";
 
+interface ApartmentLink {
+  role: string;
+  isPrimaryContact: boolean;
+  apartment: {
+    topNumber: string;
+    building: {
+      houseNumber: string;
+    };
+  };
+}
+
+interface Resident {
+  id: string;
+  salutation?: string;
+  title?: string;
+  firstName?: string;
+  lastName?: string;
+  loginEmail?: string;
+  loginEnabled: boolean;
+  lastLoginAt?: string;
+  apartmentLinks: ApartmentLink[];
+}
+
 export default function AdminBewohnerPage() {
-  const [residents, setResidents] = useState<any[]>([]);
+  const [residents, setResidents] = useState<Resident[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -19,12 +42,17 @@ export default function AdminBewohnerPage() {
       .catch(() => setLoading(false));
   }, []);
 
-  const filtered = residents.filter((r) =>
-    (r.firstName || "").toLowerCase().includes(search.toLowerCase()) ||
-    (r.lastName || "").toLowerCase().includes(search.toLowerCase()) ||
-    (r.loginEmail || "").toLowerCase().includes(search.toLowerCase()) ||
-    r.apartment.topNumber.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = residents.filter((r) => {
+    const searchLower = search.toLowerCase();
+    const nameMatch =
+      (r.firstName || "").toLowerCase().includes(searchLower) ||
+      (r.lastName || "").toLowerCase().includes(searchLower);
+    const emailMatch = (r.loginEmail || "").toLowerCase().includes(searchLower);
+    const aptMatch = r.apartmentLinks.some(
+      (l) => l.apartment.topNumber.toLowerCase().includes(searchLower)
+    );
+    return nameMatch || emailMatch || aptMatch;
+  });
 
   return (
     <div className="space-y-6">
@@ -55,8 +83,7 @@ export default function AdminBewohnerPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
-                  <TableHead>Rolle</TableHead>
-                  <TableHead>Wohnung</TableHead>
+                  <TableHead>Wohnungen</TableHead>
                   <TableHead>E-Mail</TableHead>
                   <TableHead>Login</TableHead>
                   <TableHead>Letzter Login</TableHead>
@@ -69,11 +96,25 @@ export default function AdminBewohnerPage() {
                       {r.salutation} {r.title} {r.firstName} {r.lastName}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={r.role === "OWNER_PRIMARY" ? "default" : "secondary"}>
-                        {r.role === "OWNER_PRIMARY" ? "Eigentümer" : r.role === "TENANT" ? "Mieter" : "Eigentümer 2"}
-                      </Badge>
+                      <div className="space-y-1">
+                        {r.apartmentLinks.map((link) => (
+                          <div key={`${r.id}-${link.apartment.topNumber}`} className="flex items-center gap-2">
+                            <Badge
+                              variant={link.role === "OWNER_PRIMARY" ? "default" : "secondary"}
+                            >
+                              {link.role === "OWNER_PRIMARY"
+                                ? "Haupt"
+                                : link.role === "TENANT"
+                                ? "Mieter"
+                                : "Neben"}
+                            </Badge>
+                            <span className="text-sm">
+                              {link.apartment.building.houseNumber} – {link.apartment.topNumber}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
                     </TableCell>
-                    <TableCell>{r.apartment.building.houseNumber} – {r.apartment.topNumber}</TableCell>
                     <TableCell>{r.loginEmail || "—"}</TableCell>
                     <TableCell>
                       {r.loginEnabled ? (

@@ -69,6 +69,7 @@ export async function GET() {
       where: { residentId: session.user.id },
       include: {
         items: { include: { product: true, window: true } },
+        apartment: { include: { building: true } },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -93,19 +94,8 @@ export async function POST(req: Request) {
       );
     }
 
-    const resident = await prisma.resident.findUnique({
-      where: { id: session.user.id },
-    });
-
-    if (!resident) {
-      return NextResponse.json(
-        { error: "Benutzer nicht gefunden" },
-        { status: 404 }
-      );
-    }
-
     // Nur Eigentümer dürfen bestellen (keine Mieter)
-    if (!isOwner(resident.role)) {
+    if (!isOwner(session.user.role)) {
       return NextResponse.json(
         { error: "Nur Eigentümer können Bestellungen aufgeben" },
         { status: 403 }
@@ -113,7 +103,14 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { items } = body as { items: OrderItemInput[] };
+    const { items, apartmentId } = body as { items: OrderItemInput[]; apartmentId: string };
+
+    if (!apartmentId || !session.user.apartmentIds.includes(apartmentId)) {
+      return NextResponse.json(
+        { error: "Ungültige Wohnung" },
+        { status: 403 }
+      );
+    }
 
     if (!Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
@@ -129,7 +126,7 @@ export async function POST(req: Request) {
     const windows = await prisma.window.findMany({
       where: {
         id: { in: windowIds },
-        apartmentId: resident.apartmentId,
+        apartmentId: apartmentId,
       },
     });
     const products = await prisma.product.findMany({
@@ -141,9 +138,9 @@ export async function POST(req: Request) {
 
     // Alles in einer Transaktion: Entwurf löschen + neu erstellen
     const order = await prisma.$transaction(async (tx) => {
-      // Bestehenden Entwurf löschen
+      // Bestehenden Entwurf für diese Wohnung löschen
       await tx.order.deleteMany({
-        where: { residentId: session.user.id, status: "DRAFT" },
+        where: { residentId: session.user.id, apartmentId, status: "DRAFT" },
       });
 
       let materialTotal = 0;
@@ -224,7 +221,7 @@ export async function POST(req: Request) {
       return tx.order.create({
         data: {
           residentId: session.user.id,
-          apartmentId: resident.apartmentId,
+          apartmentId,
           status: "DRAFT",
           materialTotal,
           installationTotal,

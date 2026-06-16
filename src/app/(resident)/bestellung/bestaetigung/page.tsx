@@ -27,6 +27,7 @@ import {
 interface OrderData {
   id: string;
   status: string;
+  apartmentId: string;
   totalNet: number;
   totalGross: number;
   materialTotal: number;
@@ -360,7 +361,7 @@ export default function BestellungBestaetigungPage() {
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row">
-            <Link href="/bestellung/zusammenfassung" className="w-full sm:w-auto">
+            <Link href={`/bestellung/zusammenfassung?apartmentId=${order.apartmentId}`} className="w-full sm:w-auto">
               <Button variant="outline" className="w-full h-14 text-lg gap-2 sm:w-auto">
                 <ArrowLeft className="size-5" />
                 Zurück

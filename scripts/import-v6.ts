@@ -87,20 +87,33 @@ async function importApartmentsAndOwners(buildings: { b64: any; b66: any }) {
     const e1Email = e1EmailRaw && e1EmailRaw.includes("@") ? e1EmailRaw.split(";")[0].trim() : null;
 
     if (e1Vorname || e1Nachname) {
-      await prisma.resident.upsert({
-        where: { loginEmail: e1Email || `e1_${apartment.id}@placeholder.local` },
+      const loginEmail = e1Email || `e1_${apartment.id}@placeholder.local`;
+      const resident = await prisma.resident.upsert({
+        where: { loginEmail },
         update: {
           firstName: e1Vorname, lastName: e1Nachname,
           salutation: e1Anrede, title: e1Titel,
-          phone: e1Tel, email: e1EmailRaw, isPrimaryContact: true,
+          phone: e1Tel, email: e1EmailRaw,
         },
         create: {
-          apartmentId: apartment.id, role: "OWNER_PRIMARY",
           salutation: e1Anrede, title: e1Titel,
           firstName: e1Vorname, lastName: e1Nachname,
           phone: e1Tel, email: e1EmailRaw,
-          loginEmail: e1Email || `e1_${apartment.id}@placeholder.local`,
-          isPrimaryContact: true, loginEnabled: false,
+          loginEmail,
+          loginEnabled: false,
+        },
+      });
+
+      await prisma.residentApartment.upsert({
+        where: {
+          residentId_apartmentId: { residentId: resident.id, apartmentId: apartment.id },
+        },
+        update: { role: "OWNER_PRIMARY", isPrimaryContact: true },
+        create: {
+          residentId: resident.id,
+          apartmentId: apartment.id,
+          role: "OWNER_PRIMARY",
+          isPrimaryContact: true,
         },
       });
       ownerCount++;
@@ -111,13 +124,27 @@ async function importApartmentsAndOwners(buildings: { b64: any; b66: any }) {
     const e2Nachname = row[26] ? String(row[26]).trim() : null;
     if (e2Vorname || e2Nachname) {
       const e2Email = `e2_${apartment.id}@placeholder.local`;
-      await prisma.resident.upsert({
+      const resident = await prisma.resident.upsert({
         where: { loginEmail: e2Email },
-        update: {},
-        create: {
-          apartmentId: apartment.id, role: "OWNER_SECONDARY",
+        update: {
           firstName: e2Vorname, lastName: e2Nachname,
-          loginEmail: e2Email, isPrimaryContact: false, loginEnabled: false,
+        },
+        create: {
+          firstName: e2Vorname, lastName: e2Nachname,
+          loginEmail: e2Email, loginEnabled: false,
+        },
+      });
+
+      await prisma.residentApartment.upsert({
+        where: {
+          residentId_apartmentId: { residentId: resident.id, apartmentId: apartment.id },
+        },
+        update: { role: "OWNER_SECONDARY", isPrimaryContact: false },
+        create: {
+          residentId: resident.id,
+          apartmentId: apartment.id,
+          role: "OWNER_SECONDARY",
+          isPrimaryContact: false,
         },
       });
       ownerCount++;
@@ -293,16 +320,29 @@ async function createAdminUser() {
   }
 
   const passwordHash = await bcrypt.hash("admin123", 12);
-  await prisma.resident.upsert({
+  const resident = await prisma.resident.upsert({
     where: { loginEmail: "admin@starhembergstr.at" },
     update: { passwordHash, loginEnabled: true, firstName: "Admin", lastName: "System" },
     create: {
-      apartmentId: firstApartment.id, role: "OWNER_PRIMARY",
       firstName: "Admin", lastName: "System",
       loginEmail: "admin@starhembergstr.at",
-      passwordHash, isPrimaryContact: true, loginEnabled: true,
+      passwordHash, loginEnabled: true,
     },
   });
+
+  await prisma.residentApartment.upsert({
+    where: {
+      residentId_apartmentId: { residentId: resident.id, apartmentId: firstApartment.id },
+    },
+    update: { role: "OWNER_PRIMARY", isPrimaryContact: true },
+    create: {
+      residentId: resident.id,
+      apartmentId: firstApartment.id,
+      role: "OWNER_PRIMARY",
+      isPrimaryContact: true,
+    },
+  });
+
   console.log("  Admin: admin@starhembergstr.at / admin123");
 }
 
@@ -310,10 +350,10 @@ async function createTestUser() {
   console.log("Erstelle Test-Benutzer...");
   // Finde Wohnung mit den meisten Fenstern
   const apartments = await prisma.apartment.findMany({
-    include: { windows: true, residents: true },
+    include: { windows: true, residentLinks: true },
   });
   const sorted = apartments
-    .filter(a => a.residents.length > 0)
+    .filter(a => a.residentLinks.length > 0)
     .sort((a, b) => b.windows.length - a.windows.length);
 
   const apartment = sorted[0];
@@ -322,11 +362,16 @@ async function createTestUser() {
     return;
   }
 
-  const resident = apartment.residents[0];
+  const link = apartment.residentLinks[0];
+  if (!link) {
+    console.log("  Kein Resident für Test-Wohnung gefunden");
+    return;
+  }
+
   const passwordHash = await bcrypt.hash("test123", 12);
 
   await prisma.resident.update({
-    where: { id: resident.id },
+    where: { id: link.residentId },
     data: {
       loginEmail: "test@starhembergstr.at",
       passwordHash,
@@ -345,6 +390,7 @@ async function main() {
   try {
     await prisma.orderItem.deleteMany();
     await prisma.order.deleteMany();
+    await prisma.residentApartment.deleteMany();
     await prisma.window.deleteMany();
     await prisma.resident.deleteMany();
     await prisma.apartment.deleteMany();
@@ -364,6 +410,7 @@ async function main() {
       buildings: await prisma.building.count(),
       apartments: await prisma.apartment.count(),
       residents: await prisma.resident.count(),
+      residentApartments: await prisma.residentApartment.count(),
       windows: await prisma.window.count(),
       products: await prisma.product.count(),
     };
@@ -372,6 +419,7 @@ async function main() {
     console.log("Gebäude:", stats.buildings);
     console.log("Wohnungen:", stats.apartments);
     console.log("Eigentümer:", stats.residents);
+    console.log("Wohnungs-Verknüpfungen:", stats.residentApartments);
     console.log("Fenster:", stats.windows);
     console.log("Produkte:", stats.products);
   } catch (error) {

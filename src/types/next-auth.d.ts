@@ -9,19 +9,22 @@ declare module "next-auth" {
       email?: string | null;
       image?: string | null;
       role: string;
-      apartmentId?: string | null;
+      apartmentIds: string[];
+      primaryApartmentId?: string | null;
     };
   }
 
   interface User {
     role: string;
-    apartmentId?: string | null;
+    apartmentIds: string[];
+    primaryApartmentId?: string | null;
   }
 }
 
 declare module "next-auth/jwt" {
   interface JWT {
     role?: string;
-    apartmentId?: string | null;
+    apartmentIds?: string[];
+    primaryApartmentId?: string | null;
   }
 }

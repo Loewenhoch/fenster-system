@@ -8,7 +8,12 @@ export async function GET() {
 
   const residents = await prisma.resident.findMany({
     include: {
-      apartment: { include: { building: true } },
+      apartmentLinks: {
+        include: {
+          apartment: { include: { building: true } },
+        },
+        orderBy: { createdAt: "asc" },
+      },
       orders: { select: { id: true, status: true }, orderBy: { createdAt: "desc" }, take: 1 },
     },
     orderBy: { createdAt: "desc" },
