@@ -84,12 +84,18 @@ export default function AdminBestellungenPage() {
 
   useEffect(() => {
     fetch("/api/admin/orders")
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error("Zugriff verweigert");
+        return r.json();
+      })
       .then((data) => {
-        setOrders(data);
+        setOrders(Array.isArray(data) ? data : []);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch(() => {
+        setOrders([]);
+        setLoading(false);
+      });
   }, []);
 
   const filtered = orders.filter((o) =>
@@ -99,7 +105,8 @@ export default function AdminBestellungenPage() {
     o.status.toLowerCase().includes(search.toLowerCase())
   );
 
-  const formatPrice = (n: number) => n.toFixed(2).replace(".", ",") + " €";
+  const formatPrice = (n: number | null | undefined) =>
+    ((n ?? 0).toFixed(2).replace(".", ",") + " €");
 
   return (
     <div className="space-y-6">

@@ -40,15 +40,15 @@ export const {
         const valid = await bcrypt.compare(password, resident.passwordHash);
         if (!valid) return null;
 
-        await prisma.resident.update({
+        // Nicht-kritisches Update: darf Login nicht blockieren
+        prisma.resident.update({
           where: { id: resident.id },
           data: { lastLoginAt: new Date() },
+        }).catch(() => {
+          // Ignoriere DB-Fehler bei lastLoginAt-Update
         });
 
-        const role =
-          resident.loginEmail === "admin@starhembergstr.at"
-            ? "ADMIN"
-            : resident.role;
+        const role = resident.role;
 
         return {
           id: resident.id,

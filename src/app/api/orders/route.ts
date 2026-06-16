@@ -139,101 +139,112 @@ export async function POST(req: Request) {
     const windowMap = new Map(windows.map((w) => [w.id, w]));
     const productMap = new Map(products.map((p) => [p.id, p]));
 
-    // Bestehenden Entwurf löschen
-    await prisma.order.deleteMany({
-      where: { residentId: session.user.id, status: "DRAFT" },
-    });
+    // Alles in einer Transaktion: Entwurf löschen + neu erstellen
+    const order = await prisma.$transaction(async (tx) => {
+      // Bestehenden Entwurf löschen
+      await tx.order.deleteMany({
+        where: { residentId: session.user.id, status: "DRAFT" },
+      });
 
-    let materialTotal = 0;
-    let installationTotal = 0;
-    let manipulationTotal = 0;
+      let materialTotal = 0;
+      let installationTotal = 0;
+      let manipulationTotal = 0;
 
-    const orderItemsWithMeta = items.map((item) => {
-      const window = windowMap.get(item.windowId);
-      const product = productMap.get(item.productId);
+      const orderItemsWithMeta = items.map((item) => {
+        const window = windowMap.get(item.windowId);
+        const product = productMap.get(item.productId);
 
-      if (!window) {
-        throw new Error(`Fenster ${item.windowId} nicht gefunden`);
+        if (!window) {
+          throw new Error(`Fenster ${item.windowId} nicht gefunden`);
+        }
+        if (!product) {
+          throw new Error(`Produkt ${item.productId} nicht gefunden`);
+        }
+
+        // Verfügbarkeitsprüfung: Produkt muss für dieses Fenster verfügbar sein
+        if (product.category === "SUNSCREEN_MOTOR" && (!window.isMotorPossible || !window.priceMotorMaterial || window.priceMotorMaterial <= 0)) {
+          throw new Error(`Produkt ${product.name} nicht für Fenster ${window.windowNumber} verfügbar`);
+        }
+        if (product.category === "SUNSCREEN_CORD" && (!window.isCordPossible || !window.priceCordMaterial || window.priceCordMaterial <= 0)) {
+          throw new Error(`Produkt ${product.name} nicht für Fenster ${window.windowNumber} verfügbar`);
+        }
+        if (product.category === "INSECT_SCREEN" && (!window.priceIsgWindow || window.priceIsgWindow <= 0) && (!window.priceIsgDoor || window.priceIsgDoor <= 0)) {
+          throw new Error(`Produkt ${product.name} nicht für Fenster ${window.windowNumber} verfügbar`);
+        }
+
+        const unitPrice = getUnitPrice(window, product);
+        const quantity = getSunscreenQuantity(window, product.category);
+        const materialLineTotal = unitPrice * quantity;
+
+        materialTotal += materialLineTotal;
+
+        return {
+          windowId: item.windowId,
+          productId: item.productId,
+          quantity,
+          unitPrice,
+          totalPrice: materialLineTotal,
+          installationFee: 0,
+          manipulationFee: 0,
+          isMountable: isMountableCategory(product.category),
+        };
+      });
+
+      const chargedWindowIds = new Set<string>();
+      for (const item of orderItemsWithMeta) {
+        if (!item.isMountable || chargedWindowIds.has(item.windowId)) continue;
+
+        const window = windowMap.get(item.windowId);
+        if (!window) continue;
+
+        const { installationFee, manipulationFee, mountingTotal } =
+          getMountingFees(window);
+
+        item.installationFee = installationFee;
+        item.manipulationFee = manipulationFee;
+        item.totalPrice += mountingTotal;
+        installationTotal += installationFee;
+        manipulationTotal += manipulationFee;
+        chargedWindowIds.add(item.windowId);
       }
-      if (!product) {
-        throw new Error(`Produkt ${item.productId} nicht gefunden`);
-      }
 
-      const unitPrice = getUnitPrice(window, product);
-      const quantity = getSunscreenQuantity(window, product.category);
-      const materialLineTotal = unitPrice * quantity;
-
-      materialTotal += materialLineTotal;
-
-      return {
+      const orderItemsData = orderItemsWithMeta.map((item) => ({
         windowId: item.windowId,
         productId: item.productId,
-        quantity,
-        unitPrice,
-        totalPrice: materialLineTotal,
-        installationFee: 0,
-        manipulationFee: 0,
-        isMountable: isMountableCategory(product.category),
-      };
-    });
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        totalPrice: item.totalPrice,
+        installationFee: item.installationFee,
+        manipulationFee: item.manipulationFee,
+      }));
 
-    const chargedWindowIds = new Set<string>();
-    for (const item of orderItemsWithMeta) {
-      if (!item.isMountable || chargedWindowIds.has(item.windowId)) continue;
+      const totalNet = materialTotal + installationTotal + manipulationTotal;
+      const totalGross = Math.round(totalNet * (1 + VAT_RATE) * 100) / 100;
 
-      const window = windowMap.get(item.windowId);
-      if (!window) continue;
-
-      const { installationFee, manipulationFee, mountingTotal } =
-        getMountingFees(window);
-
-      item.installationFee = installationFee;
-      item.manipulationFee = manipulationFee;
-      item.totalPrice += mountingTotal;
-      installationTotal += installationFee;
-      manipulationTotal += manipulationFee;
-      chargedWindowIds.add(item.windowId);
-    }
-
-    const orderItemsData = orderItemsWithMeta.map((item) => ({
-      windowId: item.windowId,
-      productId: item.productId,
-      quantity: item.quantity,
-      unitPrice: item.unitPrice,
-      totalPrice: item.totalPrice,
-      installationFee: item.installationFee,
-      manipulationFee: item.manipulationFee,
-    }));
-
-    const totalNet = materialTotal + installationTotal + manipulationTotal;
-    const totalGross = totalNet * (1 + VAT_RATE);
-
-    const order = await prisma.order.create({
-      data: {
-        residentId: session.user.id,
-        apartmentId: resident.apartmentId,
-        status: "DRAFT",
-        materialTotal,
-        installationTotal,
-        manipulationTotal,
-        totalNet,
-        totalGross,
-        items: {
-          create: orderItemsData,
+      return tx.order.create({
+        data: {
+          residentId: session.user.id,
+          apartmentId: resident.apartmentId,
+          status: "DRAFT",
+          materialTotal,
+          installationTotal,
+          manipulationTotal,
+          totalNet,
+          totalGross,
+          items: {
+            create: orderItemsData,
+          },
         },
-      },
-      include: {
-        items: { include: { product: true, window: true } },
-      },
+        include: {
+          items: { include: { product: true, window: true } },
+        },
+      });
     });
 
     return NextResponse.json(order, { status: 201 });
   } catch (error) {
     console.error("API Error:", error);
-    if (error instanceof Error && error.message.startsWith("Fenster")) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-    if (error instanceof Error && error.message.startsWith("Produkt")) {
+    if (error instanceof Error && (error.message.startsWith("Fenster") || error.message.startsWith("Produkt"))) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
     return NextResponse.json(

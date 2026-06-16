@@ -82,6 +82,7 @@ export default function BestellungPage() {
   const [windows, setWindows] = useState<WindowWithProducts[]>([]);
   const [selections, setSelections] = useState<OrderSelection[]>([]);
   const [expandedWindows, setExpandedWindows] = useState<Set<string>>(new Set());
+  const [initialExpandDone, setInitialExpandDone] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -102,6 +103,21 @@ export default function BestellungPage() {
     }
     fetchData();
   }, []);
+
+  // Initiales Expand: Fenster mit Auswahl automatisch aufklappen (nur einmal)
+  useEffect(() => {
+    if (initialExpandDone || windows.length === 0) return;
+    const saved = getOrderState();
+    if (saved.selections.length > 0) {
+      const windowIdsWithSelection = new Set(saved.selections.map((s) => s.windowId));
+      setExpandedWindows((prev) => {
+        const next = new Set(prev);
+        windowIdsWithSelection.forEach((id) => next.add(id));
+        return next;
+      });
+    }
+    setInitialExpandDone(true);
+  }, [windows, initialExpandDone]);
 
   // Prüfe ob für ein Fenster ein Motor-Produkt ausgewählt wurde
   const isMotorSelected = useCallback(
@@ -276,7 +292,7 @@ export default function BestellungPage() {
         {windows.map((win) => {
           const motorSelected = isMotorSelected(win.id);
           const hasAnySelection = selections.some((s) => s.windowId === win.id);
-          const isExpanded = expandedWindows.has(win.id) || hasAnySelection;
+          const isExpanded = expandedWindows.has(win.id);
 
           return (
             <Card key={win.id} className="card-elevated">

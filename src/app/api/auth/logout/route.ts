@@ -19,7 +19,7 @@ export async function POST() {
       maxAge: 0,
       expires: new Date(0),
       sameSite: "lax",
-      secure: true,
+      secure: process.env.NODE_ENV === "production",
     });
   }
 

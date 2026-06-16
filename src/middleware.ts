@@ -15,13 +15,17 @@ export default auth((request) => {
     nextUrl.pathname === "/impressum" ||
     nextUrl.pathname === "/";
 
-  const isAdminRoute = nextUrl.pathname.startsWith("/admin");
+  const isAdminRoute = nextUrl.pathname === "/admin" || nextUrl.pathname.startsWith("/admin/");
+  const isApiRoute = nextUrl.pathname.startsWith("/api/");
 
   if (isApiAuthRoute) {
     return NextResponse.next();
   }
 
   if (!isLoggedIn && !isPublicRoute) {
+    if (isApiRoute) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     return NextResponse.redirect(new URL("/login", nextUrl));
   }
 
@@ -37,5 +41,5 @@ export default auth((request) => {
 });
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|public|api/auth/logout).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|public).*)"],
 };

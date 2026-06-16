@@ -154,10 +154,11 @@ export async function GET() {
         }
 
         // 3. Insektenschutz
-        if (window.priceIsgWindow && window.priceIsgWindow > 0) {
+        const isgPrice = window.priceIsgWindow ?? window.priceIsgDoor;
+        if (isgPrice && isgPrice > 0) {
           const p = productMap.get("INSECT_SCREEN");
           if (p) {
-            const unitPrice = window.priceIsgWindow;
+            const unitPrice = isgPrice;
             const quantity = 1;
             const materialTotal = unitPrice * quantity;
             const { installationFee, manipulationFee, mountingTotal } =
@@ -178,39 +179,48 @@ export async function GET() {
           }
         }
 
-        // === ZUBEHÖR (nur wenn Motor überhaupt möglich ist) ===
+        // === ZUBEHÖR (nur wenn Motor überhaupt möglich ist UND Preis > 0) ===
         if (window.isMotorPossible) {
           const receiver = productMap.get("RECEIVER");
           if (receiver) {
-            accessories.push({
-              id: receiver.id,
-              name: receiver.name,
-              description: receiver.description,
-              category: receiver.category,
-              unitPrice: window.priceReceiver ?? receiver.unitPrice ?? 0,
-            });
+            const unitPrice = window.priceReceiver ?? receiver.unitPrice ?? 0;
+            if (unitPrice > 0) {
+              accessories.push({
+                id: receiver.id,
+                name: receiver.name,
+                description: receiver.description,
+                category: receiver.category,
+                unitPrice,
+              });
+            }
           }
 
           const sender1 = productMap.get("SENDER_1CH");
           if (sender1) {
-            accessories.push({
-              id: sender1.id,
-              name: sender1.name,
-              description: sender1.description,
-              category: sender1.category,
-              unitPrice: window.priceSender1Ch ?? sender1.unitPrice ?? 0,
-            });
+            const unitPrice = window.priceSender1Ch ?? sender1.unitPrice ?? 0;
+            if (unitPrice > 0) {
+              accessories.push({
+                id: sender1.id,
+                name: sender1.name,
+                description: sender1.description,
+                category: sender1.category,
+                unitPrice,
+              });
+            }
           }
 
           const sender15 = productMap.get("SENDER_15CH");
           if (sender15) {
-            accessories.push({
-              id: sender15.id,
-              name: sender15.name,
-              description: sender15.description,
-              category: sender15.category,
-              unitPrice: window.priceSender15Ch ?? sender15.unitPrice ?? 0,
-            });
+            const unitPrice = window.priceSender15Ch ?? sender15.unitPrice ?? 0;
+            if (unitPrice > 0) {
+              accessories.push({
+                id: sender15.id,
+                name: sender15.name,
+                description: sender15.description,
+                category: sender15.category,
+                unitPrice,
+              });
+            }
           }
         }
 

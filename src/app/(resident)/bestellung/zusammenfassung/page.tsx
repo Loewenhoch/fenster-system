@@ -79,9 +79,25 @@ export default function ZusammenfassungPage() {
   }, [router]);
 
   const handleRemove = (windowId: string, productId: string) => {
-    const newSelections = selections.filter(
+    const removedSelection = selections.find(
+      (s) => s.windowId === windowId && s.productId === productId
+    );
+
+    let newSelections = selections.filter(
       (s) => !(s.windowId === windowId && s.productId === productId)
     );
+
+    // Wenn ein Motor-Produkt entfernt wird, auch alle Zubehör-Produkte desselben Fensters entfernen
+    if (
+      removedSelection?.isMountable &&
+      removedSelection.category === "SUNSCREEN_MOTOR"
+    ) {
+      newSelections = newSelections.filter(
+        (s) =>
+          !(s.windowId === windowId && !s.isMountable)
+      );
+    }
+
     setLocalSelections(newSelections);
     setSelections(newSelections);
     if (newSelections.length === 0) {
@@ -94,6 +110,23 @@ export default function ZusammenfassungPage() {
     if (selections.length === 0) {
       setError("Bitte wählen Sie mindestens ein Produkt aus.");
       return;
+    }
+
+    // Prüfe, ob bereits eine DRAFT-Order existiert (verhindert Duplikate bei Back+Forward)
+    try {
+      const existingRes = await fetch("/api/orders");
+      if (existingRes.ok) {
+        const orders = await existingRes.json();
+        const draftOrder = orders.find((o: { status: string }) => o.status === "DRAFT");
+        if (draftOrder) {
+          // Es gibt bereits eine DRAFT-Order → direkt zur Bestätigung
+          clearOrderState();
+          router.push(`/bestellung/bestaetigung?orderId=${draftOrder.id}`);
+          return;
+        }
+      }
+    } catch {
+      // Ignoriere Fehler bei der Prüfung, fahre mit normaler Erstellung fort
     }
 
     setError("");

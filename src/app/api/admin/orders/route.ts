@@ -12,7 +12,9 @@ export async function GET() {
       );
     }
 
+    // Pagination: max 100 Bestellungen pro Request
     const orders = await prisma.order.findMany({
+      take: 100,
       include: {
         resident: {
           select: {
@@ -24,12 +26,23 @@ export async function GET() {
         },
         apartment: {
           include: {
-            building: true,
+            building: {
+              select: {
+                houseNumber: true,
+              },
+            },
           },
         },
         items: {
           include: {
-            product: true,
+            product: {
+              select: {
+                id: true,
+                name: true,
+                category: true,
+                unitPrice: true,
+              },
+            },
             window: {
               select: {
                 id: true,
@@ -37,22 +50,6 @@ export async function GET() {
                 location: true,
                 widthMm: true,
                 heightMm: true,
-                wingType: true,
-                priceCordMaterial: true,
-                priceMotorMaterial: true,
-                priceMotorComplete: true,
-                priceCordComplete: true,
-                priceMotorSurcharge: true,
-                priceIsgWindow: true,
-                priceIsgDoor: true,
-                priceReceiver: true,
-                priceSender1Ch: true,
-                priceSender15Ch: true,
-                requiresManipulationFee: true,
-                isMotorPossible: true,
-                isCordPossible: true,
-                isIsgWindowPossible: true,
-                isIsgDoorPossible: true,
               },
             },
           },

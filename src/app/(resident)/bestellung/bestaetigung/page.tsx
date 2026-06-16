@@ -68,10 +68,16 @@ export default function BestellungBestaetigungPage() {
     }
 
     fetch("/api/orders")
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error("Bestellungen konnten nicht geladen werden");
+        return r.json();
+      })
       .then((orders) => {
         const o = orders.find((x: OrderData) => x.id === orderId);
         if (o) setOrder(o);
+      })
+      .catch((err) => {
+        setError(err instanceof Error ? err.message : "Ein Fehler ist aufgetreten");
       })
       .finally(() => setLoading(false));
   }, [orderId, router]);
@@ -119,12 +125,34 @@ export default function BestellungBestaetigungPage() {
     return (
       <div className="max-w-2xl mx-auto space-y-6">
         <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-base text-destructive">
-          Bestellung nicht gefunden.
+          {error || "Bestellung nicht gefunden."}
         </div>
         <Link href="/bestellung">
           <Button variant="outline" className="gap-2">
             <ArrowLeft className="size-4" />
             Zurück zur Auswahl
+          </Button>
+        </Link>
+      </div>
+    );
+  }
+
+  // Wenn die Order bereits bestätigt ist, Hinweis anzeigen statt Formular
+  if (order.status === "CONFIRMED") {
+    return (
+      <div className="max-w-2xl mx-auto space-y-6">
+        <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-base text-green-800">
+          <CheckCircle className="inline size-5 mr-2" />
+          Diese Bestellung wurde bereits verbindlich bestätigt.
+        </div>
+        <div className="space-y-2 text-sm text-muted-foreground">
+          <p>Bestellnummer: #{order.id.slice(0, 8)}</p>
+          <p>Gesamtsumme brutto: {order.totalGross.toFixed(2).replace(".", ",")} €</p>
+        </div>
+        <Link href="/dashboard">
+          <Button variant="outline" className="gap-2">
+            <ArrowLeft className="size-4" />
+            Zum Dashboard
           </Button>
         </Link>
       </div>
