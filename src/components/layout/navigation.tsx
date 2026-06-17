@@ -93,6 +93,7 @@ export function Navigation({
   const handleLogout = async () => {
     sessionStorage.clear();
     localStorage.clear();
+    await fetch("/api/auth/logout", { method: "POST" });
     await signOut({ callbackUrl: "/login" });
   };
 
