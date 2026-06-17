@@ -29,49 +29,40 @@ function reviveDates(model: string, rows: Array<Record<string, unknown>>) {
   });
 }
 
-function withoutId(row: Record<string, unknown>) {
-  const rest = { ...row };
-  delete rest.id;
-  return rest;
+function quoteIdentifier(value: string) {
+  return `"${value.replaceAll('"', '""')}"`;
 }
 
-async function upsertById(model: string, rows: Array<Record<string, unknown>>) {
+async function bulkUpsertById(model: string, rows: Array<Record<string, unknown>>) {
   if (rows.length === 0) return;
-  const delegate = (prisma as unknown as Record<string, {
-    upsert: (args: {
-      where: Record<string, unknown>;
-      update: Record<string, unknown>;
-      create: Record<string, unknown>;
-    }) => Promise<unknown>;
-  }>)[model[0].toLowerCase() + model.slice(1)];
+  const data = reviveDates(model, rows);
+  const columns = Object.keys(data[0]);
+  const updateColumns = columns.filter((column) => column !== "id");
+  const quotedColumns = columns.map(quoteIdentifier).join(", ");
+  const quotedTable = quoteIdentifier(model);
+  const updateSet = updateColumns
+    .map((column) => `${quoteIdentifier(column)} = EXCLUDED.${quoteIdentifier(column)}`)
+    .join(", ");
 
-  for (const row of reviveDates(model, rows)) {
-    await delegate.upsert({
-      where: { id: row.id },
-      update: withoutId(row),
-      create: row,
+  for (let start = 0; start < data.length; start += 100) {
+    const batch = data.slice(start, start + 100);
+    const values: unknown[] = [];
+    const valueRows = batch.map((row) => {
+      const placeholders = columns.map((column) => {
+        values.push(row[column] ?? null);
+        return `$${values.length}`;
+      });
+      return `(${placeholders.join(", ")})`;
     });
-  }
-}
 
-async function upsertBuildings(rows: Array<Record<string, unknown>>) {
-  for (const row of reviveDates("Building", rows)) {
-    await prisma.building.upsert({
-      where: { houseNumber: row.houseNumber as string },
-      update: withoutId(row),
-      create: row as never,
-    });
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO ${quotedTable} (${quotedColumns}) VALUES ${valueRows.join(", ")}
+       ON CONFLICT ("id") DO UPDATE SET ${updateSet}`,
+      ...values
+    );
   }
-}
 
-async function upsertSettings(rows: Array<Record<string, unknown>>) {
-  for (const row of reviveDates("Settings", rows)) {
-    await prisma.settings.upsert({
-      where: { key: row.key as string },
-      update: withoutId(row),
-      create: row as never,
-    });
-  }
+  console.log(`Seeded ${model}: ${data.length}`);
 }
 
 function migrateSeedData(data: SeedData): SeedData {
@@ -113,13 +104,13 @@ async function main() {
     JSON.parse(fs.readFileSync(seedPath, "utf8")) as SeedData
   );
 
-  await upsertBuildings(data.Building);
-  await upsertById("Apartment", data.Apartment);
-  await upsertById("Resident", data.Resident);
-  await upsertById("ResidentApartment", data.ResidentApartment);
-  await upsertById("Window", data.Window);
-  await upsertById("Product", data.Product);
-  await upsertSettings(data.Settings);
+  await bulkUpsertById("Building", data.Building);
+  await bulkUpsertById("Apartment", data.Apartment);
+  await bulkUpsertById("Resident", data.Resident);
+  await bulkUpsertById("ResidentApartment", data.ResidentApartment);
+  await bulkUpsertById("Window", data.Window);
+  await bulkUpsertById("Product", data.Product);
+  await bulkUpsertById("Settings", data.Settings);
 
   console.log("Seed completed:", {
     buildings: data.Building.length,
