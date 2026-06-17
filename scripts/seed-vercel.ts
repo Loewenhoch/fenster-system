@@ -36,6 +36,7 @@ function quoteIdentifier(value: string) {
 async function bulkUpsertById(model: string, rows: Array<Record<string, unknown>>) {
   if (rows.length === 0) return;
   const data = reviveDates(model, rows);
+  const modelDateFields = new Set(dateFields[model] ?? []);
   const columns = Object.keys(data[0]);
   const updateColumns = columns.filter((column) => column !== "id");
   const quotedColumns = columns.map(quoteIdentifier).join(", ");
@@ -50,7 +51,9 @@ async function bulkUpsertById(model: string, rows: Array<Record<string, unknown>
     const valueRows = batch.map((row) => {
       const placeholders = columns.map((column) => {
         values.push(row[column] ?? null);
-        return `$${values.length}`;
+        return modelDateFields.has(column)
+          ? `$${values.length}::timestamp`
+          : `$${values.length}`;
       });
       return `(${placeholders.join(", ")})`;
     });
