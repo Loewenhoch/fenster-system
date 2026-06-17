@@ -1,11 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { LogOut, User, Shield, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 
 interface HeaderProps {
   showNav?: boolean;
@@ -18,17 +17,9 @@ export function Header({ showNav = false, onMenuToggle, menuOpen }: HeaderProps)
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   const handleLogout = async () => {
-    try {
-      await fetch("/api/auth/logout", { method: "POST" });
-    } catch (e) {
-      console.error("Logout error:", e);
-    }
-    // Session-Storage und Local-Storage leeren
-    if (typeof window !== "undefined") {
-      sessionStorage.clear();
-      localStorage.clear();
-    }
-    window.location.href = "/";
+    sessionStorage.clear();
+    localStorage.clear();
+    await signOut({ callbackUrl: "/login" });
   };
 
   return (

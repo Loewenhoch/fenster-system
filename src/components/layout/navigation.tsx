@@ -2,16 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { signOut } from "next-auth/react";
 import {
   LayoutDashboard,
   SquareCheck,
   ShoppingCart,
   UserCircle,
   LogOut,
-  Menu,
   X,
 } from "lucide-react";
-// Logout via custom API to avoid CSRF issues with NextAuth v5
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -92,8 +91,9 @@ export function Navigation({
   const links = variant === "admin" ? adminLinks : residentLinks;
 
   const handleLogout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
-    window.location.href = "/";
+    sessionStorage.clear();
+    localStorage.clear();
+    await signOut({ callbackUrl: "/login" });
   };
 
   return (
