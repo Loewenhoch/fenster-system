@@ -375,45 +375,6 @@ async function createAdminUser() {
   console.log("  Admin: admin@starhembergstr.at / admin123");
 }
 
-async function createTestUser() {
-  console.log("Erstelle Test-Benutzer...");
-  // Finde Wohnung mit den meisten Fenstern
-  const apartments = await prisma.apartment.findMany({
-    include: { windows: true, residentLinks: true },
-  });
-  const sorted = apartments
-    .filter(a => a.residentLinks.length > 0)
-    .sort((a, b) => b.windows.length - a.windows.length);
-
-  const apartment = sorted[0];
-  if (!apartment) {
-    console.log("  Keine passende Wohnung gefunden");
-    return;
-  }
-
-  const link = apartment.residentLinks[0];
-  if (!link) {
-    console.log("  Kein Resident für Test-Wohnung gefunden");
-    return;
-  }
-
-  const passwordHash = await bcrypt.hash("test123", 12);
-
-  await prisma.resident.update({
-    where: { id: link.residentId },
-    data: {
-      loginEmail: "test@starhembergstr.at",
-      passwordHash,
-      loginEnabled: true,
-      firstName: "Test",
-      lastName: "Benutzer",
-    },
-  });
-
-  console.log(`  Test-Account: test@starhembergstr.at / test123`);
-  console.log(`  Wohnung: ${apartment.buildingId} - ${apartment.topNumber} (${apartment.windows.length} Fenster)`);
-}
-
 async function main() {
   console.log("=== V6-Datenimport gestartet ===");
   try {
@@ -433,7 +394,6 @@ async function main() {
     await importProducts();
     await createSettings();
     await createAdminUser();
-    await createTestUser();
 
     const stats = {
       buildings: await prisma.building.count(),

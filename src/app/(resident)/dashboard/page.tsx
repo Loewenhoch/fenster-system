@@ -280,7 +280,7 @@ export default async function DashboardPage() {
 
       {/* CTA Buttons */}
       <div className="grid gap-4 sm:grid-cols-2">
-        <Link href={multipleApartments ? "/fenster" : `/fenster?apartmentId=${apartments[0].id}`}>
+        <Link href={`/fenster?apartmentId=${apartments[0].id}`}>
           <Button
             variant="outline"
             size="lg"
@@ -310,9 +310,7 @@ export default async function DashboardPage() {
           </Link>
         ) : (
           <Link
-            href={
-              multipleApartments ? "/bestellung" : `/bestellung?apartmentId=${apartments[0].id}`
-            }
+            href={`/bestellung?apartmentId=${apartments[0].id}`}
           >
             <Button
               size="lg"
