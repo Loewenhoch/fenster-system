@@ -125,26 +125,6 @@ function ZusammenfassungContent() {
       return;
     }
 
-    // Prüfe, ob bereits eine DRAFT-Order existiert (verhindert Duplikate bei Back+Forward)
-    try {
-      const existingRes = await fetch("/api/orders");
-      if (existingRes.ok) {
-        const orders = await existingRes.json();
-        const draftOrder = orders.find(
-          (o: { status: string; apartmentId: string }) =>
-            o.status === "DRAFT" && o.apartmentId === apartmentId
-        );
-        if (draftOrder) {
-          // Es gibt bereits eine DRAFT-Order → direkt zur Bestätigung
-          clearOrderState();
-          router.push(`/bestellung/bestaetigung?orderId=${draftOrder.id}`);
-          return;
-        }
-      }
-    } catch {
-      // Ignoriere Fehler bei der Prüfung, fahre mit normaler Erstellung fort
-    }
-
     setError("");
     setCreating(true);
 

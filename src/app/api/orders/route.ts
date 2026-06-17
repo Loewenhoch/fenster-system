@@ -8,6 +8,11 @@ import {
 import { NextResponse } from "next/server";
 
 const VAT_RATE = 0.2;
+const ACCESSORY_CATEGORIES = new Set([
+  "RECEIVER",
+  "SENDER_1CH",
+  "SENDER_15CH",
+]);
 
 interface OrderItemInput {
   windowId: string;
@@ -22,7 +27,9 @@ function isOwner(role: string): boolean {
 function getUnitPrice(
   window: {
     priceCordMaterial: number | null;
+    priceCordComplete: number | null;
     priceMotorMaterial: number | null;
+    priceMotorComplete: number | null;
     priceIsgWindow: number | null;
     priceIsgDoor: number | null;
     priceReceiver: number | null;
@@ -30,29 +37,41 @@ function getUnitPrice(
     priceSender15Ch: number | null;
   },
   product: { category: string; unitPrice: number }
-): number {
+): { unitPrice: number; isComplete: boolean } {
   const productCategory = product.category;
 
   if (productCategory === "SUNSCREEN_MOTOR") {
-    return window.priceMotorMaterial ?? 0;
+    if (window.priceMotorMaterial && window.priceMotorMaterial > 0) {
+      return { unitPrice: window.priceMotorMaterial, isComplete: false };
+    }
+    if (window.priceMotorComplete && window.priceMotorComplete > 0) {
+      return { unitPrice: window.priceMotorComplete, isComplete: true };
+    }
+    return { unitPrice: 0, isComplete: false };
   }
   if (productCategory === "SUNSCREEN_CORD") {
-    return window.priceCordMaterial ?? 0;
+    if (window.priceCordMaterial && window.priceCordMaterial > 0) {
+      return { unitPrice: window.priceCordMaterial, isComplete: false };
+    }
+    if (window.priceCordComplete && window.priceCordComplete > 0) {
+      return { unitPrice: window.priceCordComplete, isComplete: true };
+    }
+    return { unitPrice: 0, isComplete: false };
   }
   if (productCategory === "INSECT_SCREEN") {
-    return window.priceIsgWindow ?? window.priceIsgDoor ?? 0;
+    return { unitPrice: window.priceIsgWindow ?? window.priceIsgDoor ?? 0, isComplete: false };
   }
   if (productCategory === "RECEIVER") {
-    return window.priceReceiver ?? product.unitPrice ?? 0;
+    return { unitPrice: window.priceReceiver ?? product.unitPrice ?? 0, isComplete: false };
   }
   if (productCategory === "SENDER_1CH") {
-    return window.priceSender1Ch ?? product.unitPrice ?? 0;
+    return { unitPrice: window.priceSender1Ch ?? product.unitPrice ?? 0, isComplete: false };
   }
   if (productCategory === "SENDER_15CH") {
-    return window.priceSender15Ch ?? product.unitPrice ?? 0;
+    return { unitPrice: window.priceSender15Ch ?? product.unitPrice ?? 0, isComplete: false };
   }
 
-  return 0;
+  return { unitPrice: 0, isComplete: false };
 }
 
 export async function GET() {
@@ -135,6 +154,17 @@ export async function POST(req: Request) {
 
     const windowMap = new Map(windows.map((w) => [w.id, w]));
     const productMap = new Map(products.map((p) => [p.id, p]));
+    const selectedProductCategoriesByWindow = new Map<string, Set<string>>();
+
+    for (const item of items) {
+      const product = productMap.get(item.productId);
+      if (!product) continue;
+
+      const categories =
+        selectedProductCategoriesByWindow.get(item.windowId) ?? new Set<string>();
+      categories.add(product.category);
+      selectedProductCategoriesByWindow.set(item.windowId, categories);
+    }
 
     // Alles in einer Transaktion: Entwurf löschen + neu erstellen
     const order = await prisma.$transaction(async (tx) => {
@@ -159,17 +189,30 @@ export async function POST(req: Request) {
         }
 
         // Verfügbarkeitsprüfung: Produkt muss für dieses Fenster verfügbar sein
-        if (product.category === "SUNSCREEN_MOTOR" && (!window.isMotorPossible || !window.priceMotorMaterial || window.priceMotorMaterial <= 0)) {
+        const hasMotorPrice = (window.priceMotorMaterial && window.priceMotorMaterial > 0) || (window.priceMotorComplete && window.priceMotorComplete > 0);
+        const hasCordPrice = (window.priceCordMaterial && window.priceCordMaterial > 0) || (window.priceCordComplete && window.priceCordComplete > 0);
+        if (product.category === "SUNSCREEN_MOTOR" && (!window.isMotorPossible || !hasMotorPrice)) {
           throw new Error(`Produkt ${product.name} nicht für Fenster ${window.windowNumber} verfügbar`);
         }
-        if (product.category === "SUNSCREEN_CORD" && (!window.isCordPossible || !window.priceCordMaterial || window.priceCordMaterial <= 0)) {
+        if (product.category === "SUNSCREEN_CORD" && (!window.isCordPossible || !hasCordPrice)) {
           throw new Error(`Produkt ${product.name} nicht für Fenster ${window.windowNumber} verfügbar`);
         }
         if (product.category === "INSECT_SCREEN" && (!window.priceIsgWindow || window.priceIsgWindow <= 0) && (!window.priceIsgDoor || window.priceIsgDoor <= 0)) {
           throw new Error(`Produkt ${product.name} nicht für Fenster ${window.windowNumber} verfügbar`);
         }
+        if (ACCESSORY_CATEGORIES.has(product.category)) {
+          const selectedCategories =
+            selectedProductCategoriesByWindow.get(item.windowId) ?? new Set<string>();
 
-        const unitPrice = getUnitPrice(window, product);
+          if (!window.isMotorPossible || !selectedCategories.has("SUNSCREEN_MOTOR")) {
+            throw new Error(`Produkt ${product.name} benötigt Sonnenschutz mit Motor für Fenster ${window.windowNumber}`);
+          }
+        }
+
+        const { unitPrice, isComplete } = getUnitPrice(window, product);
+        if (unitPrice <= 0) {
+          throw new Error(`Produkt ${product.name} nicht für Fenster ${window.windowNumber} verfügbar`);
+        }
         const quantity = getSunscreenQuantity(window, product.category);
         const materialLineTotal = unitPrice * quantity;
 
@@ -184,6 +227,7 @@ export async function POST(req: Request) {
           installationFee: 0,
           manipulationFee: 0,
           isMountable: isMountableCategory(product.category),
+          isComplete,
         };
       });
 
@@ -197,10 +241,11 @@ export async function POST(req: Request) {
         const { installationFee, manipulationFee, mountingTotal } =
           getMountingFees(window);
 
-        item.installationFee = installationFee;
+        // Komplettpreise sind bereits inkl. Installation
+        item.installationFee = item.isComplete ? 0 : installationFee;
         item.manipulationFee = manipulationFee;
-        item.totalPrice += mountingTotal;
-        installationTotal += installationFee;
+        item.totalPrice += item.isComplete ? manipulationFee : mountingTotal;
+        installationTotal += item.isComplete ? 0 : installationFee;
         manipulationTotal += manipulationFee;
         chargedWindowIds.add(item.windowId);
       }

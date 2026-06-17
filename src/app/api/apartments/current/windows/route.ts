@@ -99,18 +99,29 @@ export async function GET(request: Request) {
         // === HAUPTPRODUKTE ===
         // Verfügbarkeit: Preis > 0 UND technisch möglich ("nicht möglich" steht nicht in Excel)
 
+        // Hilfsfunktion: Materialpreis bevorzugen, sonst Komplettpreis
+        const cordPrice =
+          window.priceCordMaterial && window.priceCordMaterial > 0
+            ? { unitPrice: window.priceCordMaterial, isComplete: false }
+            : window.priceCordComplete && window.priceCordComplete > 0
+            ? { unitPrice: window.priceCordComplete, isComplete: true }
+            : null;
+
+        const motorPrice =
+          window.priceMotorMaterial && window.priceMotorMaterial > 0
+            ? { unitPrice: window.priceMotorMaterial, isComplete: false }
+            : window.priceMotorComplete && window.priceMotorComplete > 0
+            ? { unitPrice: window.priceMotorComplete, isComplete: true }
+            : null;
+
         // 1. Behang mit Gurt
-        if (
-          window.isCordPossible &&
-          window.priceCordMaterial &&
-          window.priceCordMaterial > 0
-        ) {
+        if (window.isCordPossible && cordPrice) {
           const p = productMap.get("SUNSCREEN_CORD");
           if (p) {
-            const unitPrice = window.priceCordMaterial;
+            const unitPrice = cordPrice.unitPrice;
             const quantity = getSunscreenQuantity(window, p.category);
             const materialTotal = unitPrice * quantity;
-            const { installationFee, manipulationFee, mountingTotal } =
+            const { installationFee, manipulationFee } =
               getMountingFees(window);
             mainProducts.push({
               id: p.id,
@@ -120,26 +131,22 @@ export async function GET(request: Request) {
               type: "CORD",
               unitPrice,
               quantity,
-              installationFee,
+              installationFee: cordPrice.isComplete ? 0 : installationFee,
               manipulationFee,
               materialTotal,
-              totalPrice: materialTotal + mountingTotal,
+              totalPrice: materialTotal,
             });
           }
         }
 
         // 2. Behang inkl. Motor
-        if (
-          window.isMotorPossible &&
-          window.priceMotorMaterial &&
-          window.priceMotorMaterial > 0
-        ) {
+        if (window.isMotorPossible && motorPrice) {
           const p = productMap.get("SUNSCREEN_MOTOR");
           if (p) {
-            const unitPrice = window.priceMotorMaterial;
+            const unitPrice = motorPrice.unitPrice;
             const quantity = getSunscreenQuantity(window, p.category);
             const materialTotal = unitPrice * quantity;
-            const { installationFee, manipulationFee, mountingTotal } =
+            const { installationFee, manipulationFee } =
               getMountingFees(window);
             mainProducts.push({
               id: p.id,
@@ -149,10 +156,10 @@ export async function GET(request: Request) {
               type: "MOTOR",
               unitPrice,
               quantity,
-              installationFee,
+              installationFee: motorPrice.isComplete ? 0 : installationFee,
               manipulationFee,
               materialTotal,
-              totalPrice: materialTotal + mountingTotal,
+              totalPrice: materialTotal,
             });
           }
         }
@@ -165,7 +172,7 @@ export async function GET(request: Request) {
             const unitPrice = isgPrice;
             const quantity = 1;
             const materialTotal = unitPrice * quantity;
-            const { installationFee, manipulationFee, mountingTotal } =
+            const { installationFee, manipulationFee } =
               getMountingFees(window);
             mainProducts.push({
               id: p.id,
@@ -178,7 +185,7 @@ export async function GET(request: Request) {
               installationFee,
               manipulationFee,
               materialTotal,
-              totalPrice: materialTotal + mountingTotal,
+              totalPrice: materialTotal,
             });
           }
         }

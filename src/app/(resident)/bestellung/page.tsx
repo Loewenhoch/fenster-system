@@ -32,7 +32,6 @@ import {
   Radio,
   Smartphone,
   Home,
-  Wrench,
   AlertTriangle,
   ChevronDown,
   ChevronUp,
@@ -86,14 +85,11 @@ function BestellungContent() {
   const [windows, setWindows] = useState<WindowWithProducts[]>([]);
   const [selections, setSelections] = useState<OrderSelection[]>([]);
   const [expandedWindows, setExpandedWindows] = useState<Set<string>>(new Set());
-  const [initialExpandDone, setInitialExpandDone] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!apartmentId) {
-      setError("Keine Wohnung ausgewählt.");
-      setLoading(false);
       return;
     }
 
@@ -107,6 +103,9 @@ function BestellungContent() {
         setWindows(data.windows);
         const saved = getOrderState(apartmentId);
         setSelections(saved.selections);
+        if (saved.selections.length > 0) {
+          setExpandedWindows(new Set(saved.selections.map((s) => s.windowId)));
+        }
       } catch (e) {
         setError(e instanceof Error ? e.message : "Unbekannter Fehler");
       } finally {
@@ -115,21 +114,6 @@ function BestellungContent() {
     }
     fetchData();
   }, [apartmentId]);
-
-  // Initiales Expand: Fenster mit Auswahl automatisch aufklappen (nur einmal)
-  useEffect(() => {
-    if (initialExpandDone || windows.length === 0) return;
-    const saved = getOrderState(apartmentId);
-    if (saved.selections.length > 0) {
-      const windowIdsWithSelection = new Set(saved.selections.map((s) => s.windowId));
-      setExpandedWindows((prev) => {
-        const next = new Set(prev);
-        windowIdsWithSelection.forEach((id) => next.add(id));
-        return next;
-      });
-    }
-    setInitialExpandDone(true);
-  }, [windows, initialExpandDone, apartmentId]);
 
   // Prüfe ob für ein Fenster ein Motor-Produkt ausgewählt wurde
   const isMotorSelected = useCallback(
@@ -269,6 +253,7 @@ function BestellungContent() {
     router.push(`/bestellung/zusammenfassung?apartmentId=${apartmentId}`);
   };
 
+  if (!apartmentId) return <ErrorState message="Keine Wohnung ausgewählt." />;
   if (loading) return <Loading fullScreen text="Fenster werden geladen..." />;
   if (error && !windows.length)
     return <ErrorState message={error} onRetry={() => window.location.reload()} />;
@@ -311,7 +296,6 @@ function BestellungContent() {
       <div className="space-y-4">
         {windows.map((win) => {
           const motorSelected = isMotorSelected(win.id);
-          const hasAnySelection = selections.some((s) => s.windowId === win.id);
           const isExpanded = expandedWindows.has(win.id);
 
           return (
@@ -335,7 +319,7 @@ function BestellungContent() {
                         className="bg-warning/10 text-warning text-sm"
                       >
                         <AlertTriangle className="mr-1 size-3" />
-                        Bestand SS (+150 €)
+                        Bestand SS
                       </Badge>
                     )}
                     <Button
@@ -428,15 +412,6 @@ function BestellungContent() {
                                             .toFixed(2)
                                             .replace(".", ",")} €`}
                                     </span>
-                                    {product.installationFee > 0 && (
-                                      <span className="flex items-center gap-1">
-                                        <Wrench className="size-3" />
-                                        Montagegebühr pro Fenster:{" "}
-                                        {(product.installationFee + product.manipulationFee)
-                                          .toFixed(2)
-                                          .replace(".", ",")} €
-                                      </span>
-                                    )}
                                   </div>
                                 </div>
                               </div>

@@ -219,10 +219,18 @@ async function importWindowsV6(buildings: { b64: any; b66: any }) {
     const priceSender1Ch = parseFloatSafe(row[34]);        // Col c
 
     // "nicht möglich" = Option nicht verfügbar
-    // Motor: Col V, Col Y, Col Z prüfen
-    const isMotorPossible = !isNichtMoeglich(row[21]) && !isNichtMoeglich(row[24]) && !isNichtMoeglich(row[25]);
-    // Gurt: Col W, Col X, Col [ prüfen
-    const isCordPossible = !isNichtMoeglich(row[22]) && !isNichtMoeglich(row[23]) && !isNichtMoeglich(row[26]);
+    // Motor: mind. ein Motor-Preis vorhanden und keine "nicht möglich" Markierung
+    const isMotorPossible =
+      ((priceMotorComplete ?? 0) > 0 || (priceMotorMaterial ?? 0) > 0) &&
+      !isNichtMoeglich(row[21]) &&
+      !isNichtMoeglich(row[24]) &&
+      !isNichtMoeglich(row[25]);
+    // Gurt: mind. ein Gurt-Preis vorhanden und keine "nicht möglich" Markierung
+    const isCordPossible =
+      ((priceCordComplete ?? 0) > 0 || (priceCordMaterial ?? 0) > 0) &&
+      !isNichtMoeglich(row[22]) &&
+      !isNichtMoeglich(row[23]) &&
+      !isNichtMoeglich(row[26]);
     // ISG: Col _, Col ` prüfen
     const isIsgWindowPossible = !isNichtMoeglich(row[30]);
     const isIsgDoorPossible = !isNichtMoeglich(row[31]);
