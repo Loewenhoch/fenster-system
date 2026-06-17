@@ -70,6 +70,7 @@ async function bulkUpsertById(model: string, rows: Array<Record<string, unknown>
 }
 
 function migrateSeedData(data: SeedData): SeedData {
+  const windows = normalizeWindowCordPrices(data.Window ?? []);
   const residentApartments: Array<Record<string, unknown>> = [];
   const residents = (data.Resident ?? []).map((row) => {
     const {
@@ -98,8 +99,56 @@ function migrateSeedData(data: SeedData): SeedData {
   return {
     ...data,
     Resident: residents,
+    Window: windows,
     ResidentApartment: data.ResidentApartment ?? residentApartments,
   };
+}
+
+function asPositiveNumber(value: unknown): number | null {
+  return typeof value === "number" && value > 0 ? value : null;
+}
+
+function normalizeWindowCordPrices(rows: Array<Record<string, unknown>>) {
+  const fallbackByRekordType = new Map<
+    string,
+    { material: number | null; complete: number | null }
+  >();
+
+  for (const row of rows) {
+    const rekordType =
+      typeof row.rekordTypeNew === "string" ? row.rekordTypeNew : null;
+    if (!rekordType) continue;
+
+    const current = fallbackByRekordType.get(rekordType) ?? {
+      material: null,
+      complete: null,
+    };
+    current.material ??= asPositiveNumber(row.priceCordMaterial);
+    current.complete ??= asPositiveNumber(row.priceCordComplete);
+    fallbackByRekordType.set(rekordType, current);
+  }
+
+  return rows.map((row) => {
+    if (row.isCordPossible === false) return row;
+
+    const hasCordPrice =
+      asPositiveNumber(row.priceCordMaterial) !== null ||
+      asPositiveNumber(row.priceCordComplete) !== null;
+    const hasMotorPrice =
+      asPositiveNumber(row.priceMotorMaterial) !== null ||
+      asPositiveNumber(row.priceMotorComplete) !== null;
+    const rekordType =
+      typeof row.rekordTypeNew === "string" ? row.rekordTypeNew : null;
+    const fallback = rekordType ? fallbackByRekordType.get(rekordType) : null;
+
+    if (hasCordPrice || !hasMotorPrice || !fallback) return row;
+
+    return {
+      ...row,
+      priceCordMaterial: fallback.material ?? row.priceCordMaterial,
+      priceCordComplete: fallback.complete ?? row.priceCordComplete,
+    };
+  });
 }
 
 async function main() {

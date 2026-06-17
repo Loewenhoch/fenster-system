@@ -8958,7 +8958,7 @@
       "isOrderable": true,
       "priceMotorComplete": null,
       "priceCordComplete": null,
-      "priceCordMaterial": null,
+      "priceCordMaterial": 158.05,
       "priceMotorMaterial": 359.65,
       "priceMotorSurcharge": 0,
       "priceIsgWindow": 236.88,
