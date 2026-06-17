@@ -219,18 +219,20 @@ async function importWindowsV6(buildings: { b64: any; b66: any }) {
     const priceSender1Ch = parseFloatSafe(row[34]);        // Col c
 
     // "nicht möglich" = Option nicht verfügbar
-    // Motor: mind. ein Motor-Preis vorhanden und keine "nicht möglich" Markierung
-    const isMotorPossible =
-      ((priceMotorComplete ?? 0) > 0 || (priceMotorMaterial ?? 0) > 0) &&
-      !isNichtMoeglich(row[21]) &&
-      !isNichtMoeglich(row[24]) &&
-      !isNichtMoeglich(row[25]);
-    // Gurt: mind. ein Gurt-Preis vorhanden und keine "nicht möglich" Markierung
+    // Motor: mind. ein Motor-Preis vorhanden
+    const isMotorPossible = (priceMotorComplete ?? 0) > 0 || (priceMotorMaterial ?? 0) > 0;
+    // Gurt: überall dort möglich, wo ein Gurt- oder Motor-Preis vorhanden ist
+    // (laut Auftraggeber: wo Motor möglich ist, muss auch Gurt möglich sein)
+    let effectiveCordMaterial = priceCordMaterial;
+    let effectiveCordComplete = priceCordComplete;
+    if ((effectiveCordMaterial ?? 0) <= 0 && (priceMotorMaterial ?? 0) > 0) {
+      effectiveCordMaterial = priceMotorMaterial;
+    }
+    if ((effectiveCordComplete ?? 0) <= 0 && (priceMotorComplete ?? 0) > 0) {
+      effectiveCordComplete = priceMotorComplete;
+    }
     const isCordPossible =
-      ((priceCordComplete ?? 0) > 0 || (priceCordMaterial ?? 0) > 0) &&
-      !isNichtMoeglich(row[22]) &&
-      !isNichtMoeglich(row[23]) &&
-      !isNichtMoeglich(row[26]);
+      (effectiveCordComplete ?? 0) > 0 || (effectiveCordMaterial ?? 0) > 0;
     // ISG: Col _, Col ` prüfen
     const isIsgWindowPossible = !isNichtMoeglich(row[30]);
     const isIsgDoorPossible = !isNichtMoeglich(row[31]);
@@ -276,8 +278,8 @@ async function importWindowsV6(buildings: { b64: any; b66: any }) {
         rekordTypeNew: rekordNew ? String(rekordNew).trim() : null,
         // Preise
         priceMotorComplete,
-        priceCordComplete,
-        priceCordMaterial,
+        priceCordComplete: effectiveCordComplete,
+        priceCordMaterial: effectiveCordMaterial,
         priceMotorMaterial,
         priceMotorSurcharge,
         priceIsgWindow,
