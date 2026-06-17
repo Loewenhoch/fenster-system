@@ -3265,6 +3265,42 @@
       "lastLoginAt": null,
       "createdAt": "2026-05-29T09:05:39.879000Z",
       "updatedAt": "2026-05-29T09:05:39.879000Z"
+    },
+    {
+      "id": "seed_resident_marlene_kapeller93_gmail_com",
+      "salutation": null,
+      "title": null,
+      "firstName": "Marlene",
+      "lastName": "Kapeller",
+      "phone": null,
+      "email": "marlene.kapeller93@gmail.com",
+      "loginEmail": "marlene.kapeller93@gmail.com",
+      "passwordHash": "$2b$10$LVqFgil4Pd83GNUbeXyJB.euQ/8efr6icVn9txij7HRstZLNZlRWG",
+      "magicLinkToken": null,
+      "magicLinkExpires": null,
+      "loginEnabled": true,
+      "isAdmin": false,
+      "lastLoginAt": null,
+      "createdAt": "2026-06-17T10:42:28.324Z",
+      "updatedAt": "2026-06-17T10:42:28.324Z"
+    },
+    {
+      "id": "seed_resident_ale_dumf_gmail_com",
+      "salutation": null,
+      "title": null,
+      "firstName": "Alexander",
+      "lastName": "Dumfart",
+      "phone": null,
+      "email": "ale.dumf@gmail.com",
+      "loginEmail": "ale.dumf@gmail.com",
+      "passwordHash": "$2b$10$0nTEm7N5QMjcPxFda1h7s.EZYcLMCSvEySpLtV1t3KxmB2nuqRN5G",
+      "magicLinkToken": null,
+      "magicLinkExpires": null,
+      "loginEnabled": true,
+      "isAdmin": false,
+      "lastLoginAt": null,
+      "createdAt": "2026-06-17T10:42:58.830Z",
+      "updatedAt": "2026-06-17T10:42:58.830Z"
     }
   ],
   "Window": [
@@ -13260,6 +13296,26 @@
       "value": "0.20",
       "updatedAt": "2026-05-29T09:05:39.520000Z",
       "updatedBy": null
+    }
+  ],
+  "ResidentApartment": [
+    {
+      "id": "seed_ra_seed_resident_marlene_kapeller93_gmail_com_cmpqp5i6e006d82d8j2p2ipaf",
+      "residentId": "seed_resident_marlene_kapeller93_gmail_com",
+      "apartmentId": "cmpqp5i6e006d82d8j2p2ipaf",
+      "role": "OWNER_PRIMARY",
+      "isPrimaryContact": true,
+      "createdAt": "2026-06-17T10:42:28.324Z",
+      "updatedAt": "2026-06-17T10:42:28.324Z"
+    },
+    {
+      "id": "seed_ra_seed_resident_ale_dumf_gmail_com_cmpqp5i0u004f82d8l6w3rkim",
+      "residentId": "seed_resident_ale_dumf_gmail_com",
+      "apartmentId": "cmpqp5i0u004f82d8l6w3rkim",
+      "role": "OWNER_PRIMARY",
+      "isPrimaryContact": true,
+      "createdAt": "2026-06-17T10:42:58.830Z",
+      "updatedAt": "2026-06-17T10:42:58.830Z"
     }
   ]
 }
