@@ -9,6 +9,7 @@ type SeedData = Record<string, Array<Record<string, unknown>>>;
 const dateFields: Record<string, string[]> = {
   Apartment: ["createdAt", "updatedAt"],
   Resident: ["magicLinkExpires", "lastLoginAt", "createdAt", "updatedAt"],
+  ResidentApartment: ["createdAt", "updatedAt"],
   Window: ["createdAt", "updatedAt"],
   Product: ["createdAt", "updatedAt"],
   Order: ["confirmedAt", "createdAt", "updatedAt"],
