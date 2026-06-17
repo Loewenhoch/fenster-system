@@ -29,26 +29,49 @@ function reviveDates(model: string, rows: Array<Record<string, unknown>>) {
   });
 }
 
-async function createMany(model: string, rows: Array<Record<string, unknown>>) {
-  if (rows.length === 0) return;
-  const delegate = (prisma as unknown as Record<string, {
-    createMany: (args: { data: Array<Record<string, unknown>> }) => Promise<unknown>;
-  }>)[model[0].toLowerCase() + model.slice(1)];
-
-  await delegate.createMany({ data: reviveDates(model, rows) });
+function withoutId(row: Record<string, unknown>) {
+  const rest = { ...row };
+  delete rest.id;
+  return rest;
 }
 
-async function clearDatabase() {
-  await prisma.auditLog.deleteMany();
-  await prisma.orderItem.deleteMany();
-  await prisma.order.deleteMany();
-  await prisma.window.deleteMany();
-  await prisma.product.deleteMany();
-  await prisma.residentApartment.deleteMany();
-  await prisma.resident.deleteMany();
-  await prisma.apartment.deleteMany();
-  await prisma.building.deleteMany();
-  await prisma.settings.deleteMany();
+async function upsertById(model: string, rows: Array<Record<string, unknown>>) {
+  if (rows.length === 0) return;
+  const delegate = (prisma as unknown as Record<string, {
+    upsert: (args: {
+      where: Record<string, unknown>;
+      update: Record<string, unknown>;
+      create: Record<string, unknown>;
+    }) => Promise<unknown>;
+  }>)[model[0].toLowerCase() + model.slice(1)];
+
+  for (const row of reviveDates(model, rows)) {
+    await delegate.upsert({
+      where: { id: row.id },
+      update: withoutId(row),
+      create: row,
+    });
+  }
+}
+
+async function upsertBuildings(rows: Array<Record<string, unknown>>) {
+  for (const row of reviveDates("Building", rows)) {
+    await prisma.building.upsert({
+      where: { houseNumber: row.houseNumber as string },
+      update: withoutId(row),
+      create: row as never,
+    });
+  }
+}
+
+async function upsertSettings(rows: Array<Record<string, unknown>>) {
+  for (const row of reviveDates("Settings", rows)) {
+    await prisma.settings.upsert({
+      where: { key: row.key as string },
+      update: withoutId(row),
+      create: row as never,
+    });
+  }
 }
 
 function migrateSeedData(data: SeedData): SeedData {
@@ -90,18 +113,13 @@ async function main() {
     JSON.parse(fs.readFileSync(seedPath, "utf8")) as SeedData
   );
 
-  await clearDatabase();
-
-  await createMany("Building", data.Building);
-  await createMany("Apartment", data.Apartment);
-  await createMany("Resident", data.Resident);
-  await createMany("ResidentApartment", data.ResidentApartment);
-  await createMany("Window", data.Window);
-  await createMany("Product", data.Product);
-  await createMany("Order", data.Order);
-  await createMany("OrderItem", data.OrderItem);
-  await createMany("AuditLog", data.AuditLog);
-  await createMany("Settings", data.Settings);
+  await upsertBuildings(data.Building);
+  await upsertById("Apartment", data.Apartment);
+  await upsertById("Resident", data.Resident);
+  await upsertById("ResidentApartment", data.ResidentApartment);
+  await upsertById("Window", data.Window);
+  await upsertById("Product", data.Product);
+  await upsertSettings(data.Settings);
 
   console.log("Seed completed:", {
     buildings: data.Building.length,
