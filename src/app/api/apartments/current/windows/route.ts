@@ -57,6 +57,15 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     let apartmentId = searchParams.get("apartmentId");
 
+    const apartmentOptions = await prisma.apartment.findMany({
+      where: { id: { in: session.user.apartmentIds } },
+      include: { building: true },
+      orderBy: [
+        { building: { houseNumber: "asc" } },
+        { topNumber: "asc" },
+      ],
+    });
+
     // Falls keine Wohnung angegeben: Primary oder erste verwenden
     if (!apartmentId) {
       apartmentId = session.user.primaryApartmentId || session.user.apartmentIds[0];
@@ -72,6 +81,7 @@ export async function GET(request: Request) {
     const apartment = await prisma.apartment.findUnique({
       where: { id: apartmentId },
       include: {
+        building: true,
         windows: {
           orderBy: { windowNumber: "asc" },
         },
@@ -253,7 +263,21 @@ export async function GET(request: Request) {
       }
     );
 
-    return NextResponse.json({ windows: windowsWithProducts });
+    return NextResponse.json({
+      apartment: {
+        id: apartment.id,
+        houseNumber: apartment.building.houseNumber,
+        topNumber: apartment.topNumber,
+        floor: apartment.floor,
+      },
+      apartments: apartmentOptions.map((apt) => ({
+        id: apt.id,
+        houseNumber: apt.building.houseNumber,
+        topNumber: apt.topNumber,
+        floor: apt.floor,
+      })),
+      windows: windowsWithProducts,
+    });
   } catch (error) {
     console.error("API Error:", error);
     return NextResponse.json(

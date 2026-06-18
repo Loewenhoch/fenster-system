@@ -74,14 +74,23 @@ interface WindowWithProducts {
   accessories: Accessory[];
 }
 
+interface ApartmentOption {
+  id: string;
+  houseNumber: string;
+  topNumber: string;
+  floor: string;
+}
+
 const STEP = 1;
 const TOTAL_STEPS = 3;
 
 function BestellungContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const apartmentId = searchParams.get("apartmentId") || "";
+  const requestedApartmentId = searchParams.get("apartmentId") || "";
 
+  const [apartmentId, setApartmentId] = useState("");
+  const [apartments, setApartments] = useState<ApartmentOption[]>([]);
   const [windows, setWindows] = useState<WindowWithProducts[]>([]);
   const [selections, setSelections] = useState<OrderSelection[]>([]);
   const [expandedWindows, setExpandedWindows] = useState<Set<string>>(new Set());
@@ -89,22 +98,36 @@ function BestellungContent() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!apartmentId) {
-      return;
-    }
-
-    initOrderState(apartmentId);
-
     async function fetchData() {
+      setLoading(true);
+      setError(null);
       try {
-        const res = await fetch(`/api/apartments/current/windows?apartmentId=${apartmentId}`);
+        const query = requestedApartmentId
+          ? `?apartmentId=${encodeURIComponent(requestedApartmentId)}`
+          : "";
+        const res = await fetch(`/api/apartments/current/windows${query}`);
         if (!res.ok) throw new Error("Fenster konnten nicht geladen werden");
         const data = await res.json();
+
+        const selectedApartmentId = data.apartment?.id as string | undefined;
+        if (!selectedApartmentId) {
+          throw new Error("Keine Wohnung gefunden");
+        }
+
+        setApartmentId(selectedApartmentId);
+        setApartments(data.apartments || []);
         setWindows(data.windows);
-        const saved = getOrderState(apartmentId);
+        initOrderState(selectedApartmentId);
+        const saved = getOrderState(selectedApartmentId);
         setSelections(saved.selections);
         if (saved.selections.length > 0) {
           setExpandedWindows(new Set(saved.selections.map((s) => s.windowId)));
+        } else {
+          setExpandedWindows(new Set());
+        }
+
+        if (!requestedApartmentId) {
+          router.replace(`/bestellung?apartmentId=${selectedApartmentId}`);
         }
       } catch (e) {
         setError(e instanceof Error ? e.message : "Unbekannter Fehler");
@@ -113,7 +136,7 @@ function BestellungContent() {
       }
     }
     fetchData();
-  }, [apartmentId]);
+  }, [requestedApartmentId, router]);
 
   // Prüfe ob für ein Fenster ein Motor-Produkt ausgewählt wurde
   const isMotorSelected = useCallback(
@@ -253,10 +276,11 @@ function BestellungContent() {
     router.push(`/bestellung/zusammenfassung?apartmentId=${apartmentId}`);
   };
 
-  if (!apartmentId) return <ErrorState message="Keine Wohnung ausgewählt." />;
   if (loading) return <Loading fullScreen text="Fenster werden geladen..." />;
   if (error && !windows.length)
     return <ErrorState message={error} onRetry={() => window.location.reload()} />;
+
+  const selectedApartment = apartments.find((apt) => apt.id === apartmentId);
 
   const breakdown = getPriceBreakdown();
 
@@ -286,6 +310,37 @@ function BestellungContent() {
           Wählen Sie für jedes Fenster die gewünschten Sonnenschutz-Produkte aus.
         </p>
       </div>
+
+      {apartments.length > 1 && (
+        <div className="flex flex-wrap gap-2">
+          {apartments.map((apt) => {
+            const isActive = apt.id === apartmentId;
+
+            return (
+              <Link key={apt.id} href={`/bestellung?apartmentId=${apt.id}`}>
+                <Button
+                  variant={isActive ? "default" : "secondary"}
+                  className="min-h-12 gap-2"
+                >
+                  <Home className="size-4" />
+                  Haus {apt.houseNumber}, {apt.topNumber}
+                </Button>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+
+      {selectedApartment && (
+        <div className="rounded-lg bg-secondary p-3 text-sm text-muted-foreground">
+          Aktuelle Wohnung:{" "}
+          <span className="font-semibold text-foreground">
+            Haus {selectedApartment.houseNumber}, {selectedApartment.topNumber}
+          </span>
+          {" · "}
+          {windows.length} Fenster
+        </div>
+      )}
 
       {error && (
         <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-base text-destructive">
