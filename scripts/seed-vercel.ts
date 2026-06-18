@@ -6,6 +6,14 @@ const prisma = new PrismaClient();
 
 type SeedData = Record<string, Array<Record<string, unknown>>>;
 
+const conflictFieldsByModel: Record<string, string[]> = {
+  Apartment: ["buildingId", "topNumber"],
+  Building: ["houseNumber"],
+  Resident: ["loginEmail"],
+  ResidentApartment: ["residentId", "apartmentId"],
+  Settings: ["key"],
+};
+
 const dateFields: Record<string, string[]> = {
   Apartment: ["createdAt", "updatedAt"],
   Resident: ["magicLinkExpires", "lastLoginAt", "createdAt", "updatedAt"],
@@ -38,10 +46,14 @@ async function bulkUpsertById(model: string, rows: Array<Record<string, unknown>
   if (rows.length === 0) return;
   const data = reviveDates(model, rows);
   const modelDateFields = new Set(dateFields[model] ?? []);
+  const conflictFields = conflictFieldsByModel[model] ?? ["id"];
   const columns = Object.keys(data[0]);
-  const updateColumns = columns.filter((column) => column !== "id");
+  const updateColumns = columns.filter(
+    (column) => !conflictFields.includes(column)
+  );
   const quotedColumns = columns.map(quoteIdentifier).join(", ");
   const quotedTable = quoteIdentifier(model);
+  const quotedConflictFields = conflictFields.map(quoteIdentifier).join(", ");
   const updateSet = updateColumns
     .map((column) => `${quoteIdentifier(column)} = EXCLUDED.${quoteIdentifier(column)}`)
     .join(", ");
@@ -61,7 +73,7 @@ async function bulkUpsertById(model: string, rows: Array<Record<string, unknown>
 
     await prisma.$executeRawUnsafe(
       `INSERT INTO ${quotedTable} (${quotedColumns}) VALUES ${valueRows.join(", ")}
-       ON CONFLICT ("id") DO UPDATE SET ${updateSet}`,
+       ON CONFLICT (${quotedConflictFields}) DO UPDATE SET ${updateSet}`,
       ...values
     );
   }
