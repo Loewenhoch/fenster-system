@@ -21,6 +21,7 @@ import {
   initOrderState,
   addSelection,
   removeSelection,
+  setSelections as setStoredSelections,
   getPriceBreakdown,
   type OrderSelection,
 } from "@/lib/order-storage";
@@ -49,6 +50,7 @@ interface MainProduct {
   manipulationFee: number;
   materialTotal: number;
   totalPrice: number;
+  isIncludedRestoration?: boolean;
 }
 
 interface Accessory {
@@ -67,6 +69,7 @@ interface WindowWithProducts {
   heightMm: number;
   measureText: string;
   hasExistingSunscreen: boolean;
+  hasElectricSunscreen: boolean;
   requiresManipulationFee: boolean;
   isMotorPossible: boolean;
   isCordPossible: boolean;
@@ -83,6 +86,44 @@ interface ApartmentOption {
 
 const STEP = 1;
 const TOTAL_STEPS = 3;
+
+
+function toOrderSelection(windowId: string, product: MainProduct): OrderSelection {
+  return {
+    windowId,
+    productId: product.id,
+    productName: product.name,
+    category: product.category,
+    unitPrice: product.unitPrice,
+    quantity: product.quantity,
+    installationFee: product.installationFee,
+    manipulationFee: product.manipulationFee,
+    totalPrice: product.materialTotal,
+    isMountable: true,
+    isIncludedRestoration: product.isIncludedRestoration,
+  };
+}
+
+function normalizeSelectionsForIncludedRestoration(
+  windows: WindowWithProducts[],
+  selections: OrderSelection[]
+): OrderSelection[] {
+  let normalized = [...selections];
+
+  for (const win of windows) {
+    const includedProduct = win.mainProducts.find((p) => p.isIncludedRestoration);
+    if (!includedProduct) continue;
+
+    normalized = normalized.filter(
+      (selection) =>
+        selection.windowId !== win.id ||
+        !selection.category?.startsWith("SUNSCREEN_")
+    );
+    normalized.push(toOrderSelection(win.id, includedProduct));
+  }
+
+  return normalized;
+}
 
 function BestellungContent() {
   const router = useRouter();
@@ -119,9 +160,14 @@ function BestellungContent() {
         setWindows(data.windows);
         initOrderState(selectedApartmentId);
         const saved = getOrderState(selectedApartmentId);
-        setSelections(saved.selections);
-        if (saved.selections.length > 0) {
-          setExpandedWindows(new Set(saved.selections.map((s) => s.windowId)));
+        const normalizedSelections = normalizeSelectionsForIncludedRestoration(
+          data.windows,
+          saved.selections
+        );
+        setStoredSelections(selectedApartmentId, normalizedSelections);
+        setSelections(normalizedSelections);
+        if (normalizedSelections.length > 0) {
+          setExpandedWindows(new Set(normalizedSelections.map((s) => s.windowId)));
         } else {
           setExpandedWindows(new Set());
         }
@@ -163,7 +209,7 @@ function BestellungContent() {
 
   const handleToggleMain = useCallback(
     (windowId: string, product: MainProduct) => {
-      if (!apartmentId) return;
+      if (!apartmentId || product.isIncludedRestoration) return;
       if (isSelected(windowId, product.id)) {
         removeSelection(windowId, product.id, apartmentId);
         // Wenn Motor abgewählt wird, auch alle Zubehör für dieses Fenster entfernen
@@ -199,21 +245,7 @@ function BestellungContent() {
             }
           }
         }
-        addSelection(
-          {
-            windowId,
-            productId: product.id,
-            productName: product.name,
-            category: product.category,
-            unitPrice: product.unitPrice,
-            quantity: product.quantity,
-            installationFee: product.installationFee,
-            manipulationFee: product.manipulationFee,
-            totalPrice: product.materialTotal,
-            isMountable: true,
-          },
-          apartmentId
-        );
+        addSelection(toOrderSelection(windowId, product), apartmentId);
       }
       setSelections(getOrderState(apartmentId).selections);
     },
@@ -413,20 +445,24 @@ function BestellungContent() {
                         <div className="space-y-2">
                           {win.mainProducts.map((product) => {
                             const checked = isSelected(win.id, product.id);
+                            const isLocked = !!product.isIncludedRestoration;
 
                             return (
                               <div
                                 key={product.id}
-                                className={`flex items-start gap-3 rounded-lg border p-4 transition-colors cursor-pointer ${
-                                  checked
-                                    ? "border-accent bg-accent/5"
-                                    : "border-border bg-card hover:bg-muted/50"
+                                className={`flex items-start gap-3 rounded-lg border p-4 transition-colors ${
+                                  isLocked
+                                    ? "cursor-default border-green-200 bg-green-50"
+                                    : checked
+                                    ? "cursor-pointer border-accent bg-accent/5"
+                                    : "cursor-pointer border-border bg-card hover:bg-muted/50"
                                 }`}
                                 onClick={() => handleToggleMain(win.id, product)}
                               >
                                 <Checkbox
                                   id={`${win.id}-${product.id}`}
                                   checked={checked}
+                                  disabled={isLocked}
                                   className="mt-1 size-5 pointer-events-none"
                                 />
                                 <div className="flex-1 min-w-0 pointer-events-none">
@@ -444,6 +480,11 @@ function BestellungContent() {
                                       <Bug className="size-5 text-accent shrink-0" />
                                     )}
                                     <span className="truncate">{product.name}</span>
+                                    {isLocked && (
+                                      <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+                                        inklusive
+                                      </Badge>
+                                    )}
                                     <span className="ml-auto text-lg font-bold text-primary whitespace-nowrap">
                                       {product.materialTotal.toFixed(2).replace(".", ",")} €
                                     </span>
@@ -455,18 +496,22 @@ function BestellungContent() {
                                   )}
                                   {/* Preisaufschlüsselung */}
                                   <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground">
-                                    <span>
-                                      Material:{" "}
-                                      {product.quantity > 1
-                                        ? `${product.quantity} × ${product.unitPrice
-                                            .toFixed(2)
-                                            .replace(".", ",")} € = ${product.materialTotal
-                                            .toFixed(2)
-                                            .replace(".", ",")} €`
-                                        : `${product.unitPrice
-                                            .toFixed(2)
-                                            .replace(".", ",")} €`}
-                                    </span>
+                                    {isLocked ? (
+                                      <span>Kostenlose Wiederherstellung des vorhandenen Sonnenschutzes</span>
+                                    ) : (
+                                      <span>
+                                        Material:{" "}
+                                        {product.quantity > 1
+                                          ? `${product.quantity} x ${product.unitPrice
+                                              .toFixed(2)
+                                              .replace(".", ",")} \u20ac = ${product.materialTotal
+                                              .toFixed(2)
+                                              .replace(".", ",")} \u20ac`
+                                          : `${product.unitPrice
+                                              .toFixed(2)
+                                              .replace(".", ",")} \u20ac`}
+                                      </span>
+                                    )}
                                   </div>
                                 </div>
                               </div>

@@ -1,6 +1,10 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getMountingFees, getSunscreenQuantity } from "@/lib/pricing";
+import {
+  getExistingSunscreenCategory,
+  getMountingFees,
+  getSunscreenQuantity,
+} from "@/lib/pricing";
 import { NextResponse } from "next/server";
 
 // Hauptprodukte, die direkt auswählbar sind
@@ -16,6 +20,7 @@ interface MainProduct {
   manipulationFee: number;
   materialTotal: number;
   totalPrice: number;
+  isIncludedRestoration?: boolean;
 }
 
 // Zubehör, nur sichtbar wenn Motor ausgewählt
@@ -35,6 +40,7 @@ interface WindowResponse {
   heightMm: number;
   measureText: string;
   hasExistingSunscreen: boolean;
+  hasElectricSunscreen: boolean;
   requiresManipulationFee: boolean;
   rekordTypeNew: string | null;
   isMotorPossible: boolean;
@@ -152,11 +158,18 @@ export async function GET(request: Request) {
             ? { unitPrice: window.priceMotorComplete, isComplete: true }
             : null;
 
+        const existingSunscreenCategory = getExistingSunscreenCategory(window);
+
         // 1. Behang mit Gurt
-        if (window.isCordPossible && cordPrice) {
+        if (
+          window.isCordPossible &&
+          (cordPrice || existingSunscreenCategory === "SUNSCREEN_CORD") &&
+          (!existingSunscreenCategory || existingSunscreenCategory === "SUNSCREEN_CORD")
+        ) {
           const p = productMap.get("SUNSCREEN_CORD");
           if (p) {
-            const unitPrice = cordPrice.unitPrice;
+            const isIncludedRestoration = existingSunscreenCategory === p.category;
+            const unitPrice = isIncludedRestoration ? 0 : cordPrice?.unitPrice ?? 0;
             const quantity = getSunscreenQuantity(window, p.category);
             const materialTotal = unitPrice * quantity;
             const { installationFee, manipulationFee } =
@@ -164,24 +177,32 @@ export async function GET(request: Request) {
             mainProducts.push({
               id: p.id,
               name: p.name,
-              description: p.description,
+              description: isIncludedRestoration
+                ? "Vorhandener Sonnenschutz wird kostenlos wieder montiert."
+                : p.description,
               category: p.category,
               type: "CORD",
               unitPrice,
               quantity,
-              installationFee: cordPrice.isComplete ? 0 : installationFee,
-              manipulationFee,
+              installationFee: isIncludedRestoration || cordPrice?.isComplete ? 0 : installationFee,
+              manipulationFee: isIncludedRestoration ? 0 : manipulationFee,
               materialTotal,
               totalPrice: materialTotal,
+              isIncludedRestoration,
             });
           }
         }
 
         // 2. Behang inkl. Motor
-        if (window.isMotorPossible && motorPrice) {
+        if (
+          window.isMotorPossible &&
+          (motorPrice || existingSunscreenCategory === "SUNSCREEN_MOTOR") &&
+          (!existingSunscreenCategory || existingSunscreenCategory === "SUNSCREEN_MOTOR")
+        ) {
           const p = productMap.get("SUNSCREEN_MOTOR");
           if (p) {
-            const unitPrice = motorPrice.unitPrice;
+            const isIncludedRestoration = existingSunscreenCategory === p.category;
+            const unitPrice = isIncludedRestoration ? 0 : motorPrice?.unitPrice ?? 0;
             const quantity = getSunscreenQuantity(window, p.category);
             const materialTotal = unitPrice * quantity;
             const { installationFee, manipulationFee } =
@@ -189,15 +210,18 @@ export async function GET(request: Request) {
             mainProducts.push({
               id: p.id,
               name: p.name,
-              description: p.description,
+              description: isIncludedRestoration
+                ? "Vorhandener Sonnenschutz wird kostenlos wieder montiert."
+                : p.description,
               category: p.category,
               type: "MOTOR",
               unitPrice,
               quantity,
-              installationFee: motorPrice.isComplete ? 0 : installationFee,
-              manipulationFee,
+              installationFee: isIncludedRestoration || motorPrice?.isComplete ? 0 : installationFee,
+              manipulationFee: isIncludedRestoration ? 0 : manipulationFee,
               materialTotal,
               totalPrice: materialTotal,
+              isIncludedRestoration,
             });
           }
         }
@@ -281,6 +305,7 @@ export async function GET(request: Request) {
           heightMm: window.heightMm,
           measureText: window.measureText,
           hasExistingSunscreen: window.hasExistingSunscreen,
+          hasElectricSunscreen: window.hasElectricSunscreen,
           requiresManipulationFee: window.requiresManipulationFee,
           rekordTypeNew: window.rekordTypeNew,
           isMotorPossible: window.isMotorPossible,

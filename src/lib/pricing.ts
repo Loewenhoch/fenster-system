@@ -16,6 +16,8 @@ export const MOUNTABLE_CATEGORIES = new Set([
 export interface PricingWindow {
   widthMm?: number | null;
   rekordTypeNew?: string | null;
+  hasExistingSunscreen?: boolean | null;
+  hasElectricSunscreen?: boolean | null;
   requiresManipulationFee?: boolean | null;
 }
 
@@ -27,6 +29,7 @@ export interface PriceSelection {
   installationFee?: number;
   manipulationFee?: number;
   isMountable?: boolean;
+  isIncludedRestoration?: boolean;
 }
 
 export function isSunscreenCategory(category: string): boolean {
@@ -35,6 +38,20 @@ export function isSunscreenCategory(category: string): boolean {
 
 export function isMountableCategory(category: string): boolean {
   return MOUNTABLE_CATEGORIES.has(category);
+}
+
+export function getExistingSunscreenCategory(
+  window: PricingWindow
+): "SUNSCREEN_MOTOR" | "SUNSCREEN_CORD" | null {
+  if (!window.hasExistingSunscreen && !window.requiresManipulationFee) return null;
+  return window.hasElectricSunscreen ? "SUNSCREEN_MOTOR" : "SUNSCREEN_CORD";
+}
+
+export function isIncludedExistingSunscreen(
+  window: PricingWindow,
+  category?: string | null
+): boolean {
+  return !!category && getExistingSunscreenCategory(window) === category;
 }
 
 export function getSunscreenQuantity(
@@ -55,14 +72,18 @@ export function getMountingFees(window: PricingWindow): {
   manipulationFee: number;
   mountingTotal: number;
 } {
-  const manipulationFee = window.requiresManipulationFee
-    ? MANIPULATION_FEE
-    : 0;
+  if (window.hasExistingSunscreen || window.requiresManipulationFee) {
+    return {
+      installationFee: 0,
+      manipulationFee: 0,
+      mountingTotal: 0,
+    };
+  }
 
   return {
     installationFee: INSTALLATION_FEE,
-    manipulationFee,
-    mountingTotal: INSTALLATION_FEE + manipulationFee,
+    manipulationFee: 0,
+    mountingTotal: INSTALLATION_FEE,
   };
 }
 

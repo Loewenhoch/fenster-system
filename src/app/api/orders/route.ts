@@ -1,9 +1,12 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
+  getExistingSunscreenCategory,
   getMountingFees,
   getSunscreenQuantity,
+  isIncludedExistingSunscreen,
   isMountableCategory,
+  isSunscreenCategory,
   VAT_RATE,
 } from "@/lib/pricing";
 import { NextResponse } from "next/server";
@@ -35,43 +38,50 @@ function getUnitPrice(
     priceReceiver: number | null;
     priceSender1Ch: number | null;
     priceSender15Ch: number | null;
+    hasExistingSunscreen: boolean;
+    hasElectricSunscreen: boolean;
+    requiresManipulationFee: boolean;
   },
   product: { category: string; unitPrice: number }
-): { unitPrice: number; isComplete: boolean } {
+): { unitPrice: number; isComplete: boolean; isIncludedRestoration: boolean } {
   const productCategory = product.category;
+
+  if (isIncludedExistingSunscreen(window, productCategory)) {
+    return { unitPrice: 0, isComplete: false, isIncludedRestoration: true };
+  }
 
   if (productCategory === "SUNSCREEN_MOTOR") {
     if (window.priceMotorMaterial && window.priceMotorMaterial > 0) {
-      return { unitPrice: window.priceMotorMaterial, isComplete: false };
+      return { unitPrice: window.priceMotorMaterial, isComplete: false, isIncludedRestoration: false };
     }
     if (window.priceMotorComplete && window.priceMotorComplete > 0) {
-      return { unitPrice: window.priceMotorComplete, isComplete: true };
+      return { unitPrice: window.priceMotorComplete, isComplete: true, isIncludedRestoration: false };
     }
-    return { unitPrice: 0, isComplete: false };
+    return { unitPrice: 0, isComplete: false, isIncludedRestoration: false };
   }
   if (productCategory === "SUNSCREEN_CORD") {
     if (window.priceCordMaterial && window.priceCordMaterial > 0) {
-      return { unitPrice: window.priceCordMaterial, isComplete: false };
+      return { unitPrice: window.priceCordMaterial, isComplete: false, isIncludedRestoration: false };
     }
     if (window.priceCordComplete && window.priceCordComplete > 0) {
-      return { unitPrice: window.priceCordComplete, isComplete: true };
+      return { unitPrice: window.priceCordComplete, isComplete: true, isIncludedRestoration: false };
     }
-    return { unitPrice: 0, isComplete: false };
+    return { unitPrice: 0, isComplete: false, isIncludedRestoration: false };
   }
   if (productCategory === "INSECT_SCREEN") {
-    return { unitPrice: window.priceIsgWindow ?? window.priceIsgDoor ?? 0, isComplete: false };
+    return { unitPrice: window.priceIsgWindow ?? window.priceIsgDoor ?? 0, isComplete: false, isIncludedRestoration: false };
   }
   if (productCategory === "RECEIVER") {
-    return { unitPrice: window.priceReceiver ?? product.unitPrice ?? 0, isComplete: false };
+    return { unitPrice: window.priceReceiver ?? product.unitPrice ?? 0, isComplete: false, isIncludedRestoration: false };
   }
   if (productCategory === "SENDER_1CH") {
-    return { unitPrice: window.priceSender1Ch ?? product.unitPrice ?? 0, isComplete: false };
+    return { unitPrice: window.priceSender1Ch ?? product.unitPrice ?? 0, isComplete: false, isIncludedRestoration: false };
   }
   if (productCategory === "SENDER_15CH") {
-    return { unitPrice: window.priceSender15Ch ?? product.unitPrice ?? 0, isComplete: false };
+    return { unitPrice: window.priceSender15Ch ?? product.unitPrice ?? 0, isComplete: false, isIncludedRestoration: false };
   }
 
-  return { unitPrice: 0, isComplete: false };
+  return { unitPrice: 0, isComplete: false, isIncludedRestoration: false };
 }
 
 export async function GET() {
@@ -139,15 +149,30 @@ export async function POST(req: Request) {
     }
 
     // Alle benötigten Fenster und Produkte auf einmal laden
-    const windowIds = [...new Set(items.map((i) => i.windowId).filter(Boolean))];
-    const productIds = [...new Set(items.map((i) => i.productId).filter(Boolean))];
-
-    const windows = await prisma.window.findMany({
-      where: {
-        id: { in: windowIds },
-        apartmentId: apartmentId,
-      },
+    const apartmentWindows = await prisma.window.findMany({
+      where: { apartmentId },
     });
+
+    const normalizedItems: OrderItemInput[] = [...items];
+    const selectedKeys = new Set(
+      normalizedItems.map((item) => `${item.windowId}:${item.productId}`)
+    );
+
+    for (const window of apartmentWindows) {
+      const includedCategory = getExistingSunscreenCategory(window);
+      if (!includedCategory) continue;
+
+      const key = `${window.id}:${includedCategory}`;
+      if (!selectedKeys.has(key)) {
+        normalizedItems.push({ windowId: window.id, productId: includedCategory });
+        selectedKeys.add(key);
+      }
+    }
+
+    const windowIds = [...new Set(normalizedItems.map((i) => i.windowId).filter(Boolean))];
+    const productIds = [...new Set(normalizedItems.map((i) => i.productId).filter(Boolean))];
+
+    const windows = apartmentWindows.filter((window) => windowIds.includes(window.id));
     const products = await prisma.product.findMany({
       where: { id: { in: productIds } },
     });
@@ -156,7 +181,7 @@ export async function POST(req: Request) {
     const productMap = new Map(products.map((p) => [p.id, p]));
     const selectedProductCategoriesByWindow = new Map<string, Set<string>>();
 
-    for (const item of items) {
+    for (const item of normalizedItems) {
       const product = productMap.get(item.productId);
       if (!product) continue;
 
@@ -177,7 +202,7 @@ export async function POST(req: Request) {
       let installationTotal = 0;
       let manipulationTotal = 0;
 
-      const orderItemsWithMeta = items.map((item) => {
+      const orderItemsWithMeta = normalizedItems.map((item) => {
         const window = windowMap.get(item.windowId);
         const product = productMap.get(item.productId);
 
@@ -189,13 +214,22 @@ export async function POST(req: Request) {
         }
 
         // Verfügbarkeitsprüfung: Produkt muss für dieses Fenster verfügbar sein
+        const includedCategory = getExistingSunscreenCategory(window);
+        if (
+          includedCategory &&
+          isSunscreenCategory(product.category) &&
+          product.category !== includedCategory
+        ) {
+          throw new Error(`Fuer Fenster ${window.windowNumber} ist der vorhandene Sonnenschutz fix vorgegeben`);
+        }
+
         const hasMotorPrice = (window.priceMotorMaterial && window.priceMotorMaterial > 0) || (window.priceMotorComplete && window.priceMotorComplete > 0);
         const hasCordPrice = (window.priceCordMaterial && window.priceCordMaterial > 0) || (window.priceCordComplete && window.priceCordComplete > 0);
-        if (product.category === "SUNSCREEN_MOTOR" && (!window.isMotorPossible || !hasMotorPrice)) {
-          throw new Error(`Produkt ${product.name} nicht für Fenster ${window.windowNumber} verfügbar`);
+        if (product.category === "SUNSCREEN_MOTOR" && (!window.isMotorPossible || (!hasMotorPrice && includedCategory !== "SUNSCREEN_MOTOR"))) {
+          throw new Error(`Produkt ${product.name} nicht fuer Fenster ${window.windowNumber} verfuegbar`);
         }
-        if (product.category === "SUNSCREEN_CORD" && (!window.isCordPossible || !hasCordPrice)) {
-          throw new Error(`Produkt ${product.name} nicht für Fenster ${window.windowNumber} verfügbar`);
+        if (product.category === "SUNSCREEN_CORD" && (!window.isCordPossible || (!hasCordPrice && includedCategory !== "SUNSCREEN_CORD"))) {
+          throw new Error(`Produkt ${product.name} nicht fuer Fenster ${window.windowNumber} verfuegbar`);
         }
         if (product.category === "INSECT_SCREEN" && (!window.priceIsgWindow || window.priceIsgWindow <= 0) && (!window.priceIsgDoor || window.priceIsgDoor <= 0)) {
           throw new Error(`Produkt ${product.name} nicht für Fenster ${window.windowNumber} verfügbar`);
@@ -209,8 +243,8 @@ export async function POST(req: Request) {
           }
         }
 
-        const { unitPrice, isComplete } = getUnitPrice(window, product);
-        if (unitPrice <= 0) {
+        const { unitPrice, isComplete, isIncludedRestoration } = getUnitPrice(window, product);
+        if (unitPrice <= 0 && !isIncludedRestoration) {
           throw new Error(`Produkt ${product.name} nicht für Fenster ${window.windowNumber} verfügbar`);
         }
         const quantity = getSunscreenQuantity(window, product.category);
@@ -228,6 +262,7 @@ export async function POST(req: Request) {
           manipulationFee: 0,
           isMountable: isMountableCategory(product.category),
           isComplete,
+          isIncludedRestoration,
         };
       });
 
@@ -242,11 +277,11 @@ export async function POST(req: Request) {
           getMountingFees(window);
 
         // Komplettpreise sind bereits inkl. Installation
-        item.installationFee = item.isComplete ? 0 : installationFee;
-        item.manipulationFee = manipulationFee;
-        item.totalPrice += item.isComplete ? manipulationFee : mountingTotal;
-        installationTotal += item.isComplete ? 0 : installationFee;
-        manipulationTotal += manipulationFee;
+        item.installationFee = item.isComplete || item.isIncludedRestoration ? 0 : installationFee;
+        item.manipulationFee = item.isIncludedRestoration ? 0 : manipulationFee;
+        item.totalPrice += item.isComplete || item.isIncludedRestoration ? 0 : mountingTotal;
+        installationTotal += item.isComplete || item.isIncludedRestoration ? 0 : installationFee;
+        manipulationTotal += item.isIncludedRestoration ? 0 : manipulationFee;
         chargedWindowIds.add(item.windowId);
       }
 
@@ -286,7 +321,7 @@ export async function POST(req: Request) {
     return NextResponse.json(order, { status: 201 });
   } catch (error) {
     console.error("API Error:", error);
-    if (error instanceof Error && (error.message.startsWith("Fenster") || error.message.startsWith("Produkt"))) {
+    if (error instanceof Error && (error.message.startsWith("Fenster") || error.message.startsWith("Produkt") || error.message.startsWith("Fuer"))) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
     return NextResponse.json(

@@ -13,6 +13,7 @@ export interface OrderSelection {
   manipulationFee: number;
   totalPrice: number;
   isMountable?: boolean;
+  isIncludedRestoration?: boolean;
 }
 
 export interface OrderState {
@@ -21,7 +22,7 @@ export interface OrderState {
 }
 
 const STORAGE_KEY = "sta-fenster-bestellung";
-const STATE_VERSION = 2;
+const STATE_VERSION = 3;
 
 interface StoredState extends OrderState {
   _version?: number;
