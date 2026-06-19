@@ -61,14 +61,18 @@ function getResidentGreeting(resident: {
   firstName: string | null;
   lastName: string | null;
 }) {
-  const salutation = resident.salutation?.trim().toLowerCase() ?? "";
+  const salutation = resident.salutation
+    ?.trim()
+    .toLowerCase()
+    .replaceAll(".", "")
+    .replace(/\s+/g, "") ?? "";
   const lastName = resident.lastName?.trim();
   const title = resident.title?.trim();
 
   if (lastName) {
-    const prefix = salutation.startsWith("frau")
+    const prefix = salutation === "frau" || salutation === "fr"
       ? "Fr."
-      : salutation.startsWith("herr")
+      : salutation === "herr" || salutation === "herrn" || salutation === "hr"
       ? "Hr."
       : "";
 
