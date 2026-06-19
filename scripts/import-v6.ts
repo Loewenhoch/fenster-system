@@ -328,7 +328,7 @@ async function createSettings() {
   const settings = [
     { key: "installation_fee", value: "120" },
     { key: "manipulation_fee", value: "150" },
-    { key: "vat_rate", value: "0.20" },
+    { key: "vat_rate", value: "0.10" },
   ];
   for (const s of settings) {
     await prisma.settings.upsert({

@@ -19,8 +19,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Search, ShoppingCart, Eye, Wrench, AlertTriangle } from "lucide-react";
+import { Search, ShoppingCart, Eye, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { VAT_RATE } from "@/lib/pricing";
 
 interface OrderItem {
   id: string;
@@ -290,21 +291,12 @@ export default function AdminBestellungenPage() {
                                     <span>{formatPrice(o.installationTotal + o.manipulationTotal)}</span>
                                   </div>
                                 )}
-                                {o.manipulationTotal > 0 && (
-                                  <div className="flex justify-between text-muted-foreground">
-                                    <span className="flex items-center gap-1">
-                                      <AlertTriangle className="size-3" />
-                                      davon Manipulation bei Bestand
-                                    </span>
-                                    <span>{formatPrice(o.manipulationTotal)}</span>
-                                  </div>
-                                )}
                                 <div className="border-t pt-2 flex justify-between font-medium">
                                   <span>Summe netto</span>
                                   <span>{formatPrice(o.totalNet)}</span>
                                 </div>
                                 <div className="flex justify-between text-muted-foreground">
-                                  <span>USt. (20%)</span>
+                                  <span>USt. ({Math.round(VAT_RATE * 100)}%)</span>
                                   <span>{formatPrice(o.priceSummary?.vatAmount || o.totalGross - o.totalNet)}</span>
                                 </div>
                                 <div className="border-t pt-2 flex justify-between text-lg font-bold text-primary">

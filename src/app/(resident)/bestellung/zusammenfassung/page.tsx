@@ -30,8 +30,8 @@ import {
   Smartphone,
   Trash2,
   Wrench,
-  AlertTriangle,
 } from "lucide-react";
+import { VAT_RATE } from "@/lib/pricing";
 
 interface WindowInfo {
   id: string;
@@ -156,8 +156,8 @@ function ZusammenfassungContent() {
   };
 
   const breakdown = getPriceBreakdown();
-  const vatAmount = breakdown.totalNet * 0.2;
-  const totalGross = breakdown.totalNet * 1.2;
+  const vatAmount = breakdown.totalNet * VAT_RATE;
+  const totalGross = breakdown.totalNet * (1 + VAT_RATE);
   const displayedFeeWindowIds = new Set<string>();
 
   if (loading) return <Loading fullScreen text="Zusammenfassung wird geladen..." />;
@@ -315,23 +315,12 @@ function ZusammenfassungContent() {
                 </span>
               </div>
             )}
-            {breakdown.manipulationTotal > 0 && (
-              <div className="flex justify-between text-muted-foreground">
-                <span className="flex items-center gap-1">
-                  <AlertTriangle className="size-3" />
-                  davon Manipulation bei Bestand
-                </span>
-                <span className="font-medium">
-                  {breakdown.manipulationTotal.toFixed(2).replace(".", ",")} €
-                </span>
-              </div>
-            )}
             <div className="border-t pt-2 flex justify-between text-base font-medium">
               <span>Summe netto</span>
               <span>{breakdown.totalNet.toFixed(2).replace(".", ",")} €</span>
             </div>
             <div className="flex justify-between text-sm text-muted-foreground">
-              <span>USt. (20%)</span>
+              <span>USt. ({Math.round(VAT_RATE * 100)}%)</span>
               <span>{vatAmount.toFixed(2).replace(".", ",")} €</span>
             </div>
             <div className="border-t pt-2 flex justify-between text-xl font-bold text-primary">

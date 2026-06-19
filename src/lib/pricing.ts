@@ -1,6 +1,6 @@
 export const INSTALLATION_FEE = 120;
 export const MANIPULATION_FEE = 150;
-export const VAT_RATE = 0.2;
+export const VAT_RATE = 0.1;
 
 export const SUNSCREEN_CATEGORIES = new Set([
   "SUNSCREEN_MOTOR",

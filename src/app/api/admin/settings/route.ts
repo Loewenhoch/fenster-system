@@ -6,7 +6,7 @@ import { z } from "zod";
 const DEFAULT_SETTINGS: Record<string, string> = {
   installation_fee: "120",
   manipulation_fee: "150",
-  vat_rate: "0.20",
+  vat_rate: "0.10",
 };
 
 const settingValueSchema = z.record(z.string(), z.string());

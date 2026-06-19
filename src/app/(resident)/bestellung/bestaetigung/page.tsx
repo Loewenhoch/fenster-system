@@ -21,8 +21,8 @@ import {
   ArrowLeft,
   CheckCircle,
   Wrench,
-  AlertTriangle,
 } from "lucide-react";
+import { VAT_RATE } from "@/lib/pricing";
 
 interface OrderData {
   id: string;
@@ -256,23 +256,12 @@ export default function BestellungBestaetigungPage() {
                 </span>
               </div>
             )}
-            {order.manipulationTotal > 0 && (
-              <div className="flex justify-between text-muted-foreground">
-                <span className="flex items-center gap-1">
-                  <AlertTriangle className="size-3" />
-                  davon Manipulation bei Bestand
-                </span>
-                <span className="font-medium">
-                  {order.manipulationTotal.toFixed(2).replace(".", ",")} €
-                </span>
-              </div>
-            )}
             <div className="border-t pt-2 flex justify-between text-base font-medium">
               <span>Summe netto</span>
               <span>{order.totalNet.toFixed(2).replace(".", ",")} €</span>
             </div>
             <div className="flex justify-between text-sm text-muted-foreground">
-              <span>USt. (20%)</span>
+              <span>USt. ({Math.round(VAT_RATE * 100)}%)</span>
               <span>{vatAmount.toFixed(2).replace(".", ",")} €</span>
             </div>
             <div className="border-t pt-2 flex justify-between text-xl font-bold text-primary">

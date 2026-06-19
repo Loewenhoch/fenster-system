@@ -582,12 +582,6 @@ function BestellungContent() {
                       .replace(".", ",")} €
                   </div>
                 )}
-                {breakdown.manipulationTotal > 0 && (
-                  <div>
-                    davon Manipulation bei Bestand:{" "}
-                    {breakdown.manipulationTotal.toFixed(2).replace(".", ",")} €
-                  </div>
-                )}
               </div>
             )}
           </div>

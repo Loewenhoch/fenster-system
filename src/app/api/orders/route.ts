@@ -4,10 +4,10 @@ import {
   getMountingFees,
   getSunscreenQuantity,
   isMountableCategory,
+  VAT_RATE,
 } from "@/lib/pricing";
 import { NextResponse } from "next/server";
 
-const VAT_RATE = 0.2;
 const ACCESSORY_CATEGORIES = new Set([
   "RECEIVER",
   "SENDER_1CH",
