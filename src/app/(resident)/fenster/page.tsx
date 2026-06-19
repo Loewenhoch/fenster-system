@@ -28,6 +28,39 @@ import {
   Home,
 } from "lucide-react";
 
+function getWindowDisplayKey(window: {
+  windowNumber: string;
+  location: string;
+  widthMm: number;
+  heightMm: number;
+  measureText: string;
+}) {
+  return [
+    window.windowNumber.trim().toLowerCase(),
+    window.location.trim().toLowerCase(),
+    window.widthMm,
+    window.heightMm,
+    window.measureText.trim().toLowerCase(),
+  ].join("|");
+}
+
+function getUniqueWindows<T extends {
+  windowNumber: string;
+  location: string;
+  widthMm: number;
+  heightMm: number;
+  measureText: string;
+}>(windows: T[]) {
+  const byKey = new Map<string, T>();
+  for (const window of windows) {
+    const key = getWindowDisplayKey(window);
+    if (!byKey.has(key)) {
+      byKey.set(key, window);
+    }
+  }
+  return Array.from(byKey.values());
+}
+
 export default async function FensterPage({
   searchParams,
 }: {
@@ -53,7 +86,10 @@ export default async function FensterPage({
             include: {
               building: true,
               windows: {
-                orderBy: { windowNumber: "asc" },
+                orderBy: [
+                  { windowNumber: "asc" },
+                  { updatedAt: "desc" },
+                ],
               },
             },
           },
@@ -79,7 +115,7 @@ export default async function FensterPage({
   }
 
   const apartment = selectedLink.apartment;
-  const windows = apartment.windows;
+  const windows = getUniqueWindows(apartment.windows);
   const filteredWindows = filter
     ? windows.filter((w) => {
         if (filter === "strasse")

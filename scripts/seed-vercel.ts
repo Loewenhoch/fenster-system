@@ -81,6 +81,27 @@ async function bulkUpsertById(model: string, rows: Array<Record<string, unknown>
   console.log(`Seeded ${model}: ${data.length}`);
 }
 
+async function removeStaleSeedWindows(rows: Array<Record<string, unknown>>) {
+  const seedWindowIds = rows
+    .map((row) => row.id)
+    .filter((id): id is string => typeof id === "string");
+
+  if (seedWindowIds.length === 0) return;
+
+  const placeholders = seedWindowIds.map((_, index) => `$${index + 1}`).join(", ");
+  const deleted = await prisma.$executeRawUnsafe(
+    `DELETE FROM "Window" AS w
+     WHERE w."id" NOT IN (${placeholders})
+       AND NOT EXISTS (
+         SELECT 1 FROM "OrderItem" AS oi
+         WHERE oi."windowId" = w."id"
+       )`,
+    ...seedWindowIds
+  );
+
+  console.log(`Removed stale unreferenced windows: ${deleted}`);
+}
+
 function migrateSeedData(data: SeedData): SeedData {
   const windows = normalizeWindowCordPrices(data.Window ?? []);
   const residentApartments: Array<Record<string, unknown>> = [];
@@ -173,6 +194,7 @@ async function main() {
   await bulkUpsertById("Apartment", data.Apartment);
   await bulkUpsertById("Resident", data.Resident);
   await bulkUpsertById("ResidentApartment", data.ResidentApartment);
+  await removeStaleSeedWindows(data.Window);
   await bulkUpsertById("Window", data.Window);
   await bulkUpsertById("Product", data.Product);
   await bulkUpsertById("Settings", data.Settings);

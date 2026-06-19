@@ -43,6 +43,22 @@ interface WindowResponse {
   accessories: Accessory[];
 }
 
+function getWindowDisplayKey(window: {
+  windowNumber: string;
+  location: string;
+  widthMm: number;
+  heightMm: number;
+  measureText: string;
+}) {
+  return [
+    window.windowNumber.trim().toLowerCase(),
+    window.location.trim().toLowerCase(),
+    window.widthMm,
+    window.heightMm,
+    window.measureText.trim().toLowerCase(),
+  ].join("|");
+}
+
 export async function GET(request: Request) {
   try {
     const session = await auth();
@@ -83,7 +99,10 @@ export async function GET(request: Request) {
       include: {
         building: true,
         windows: {
-          orderBy: { windowNumber: "asc" },
+          orderBy: [
+            { windowNumber: "asc" },
+            { updatedAt: "desc" },
+          ],
         },
       },
     });
@@ -101,7 +120,16 @@ export async function GET(request: Request) {
 
     const productMap = new Map(products.map((p) => [p.category, p]));
 
-    const windowsWithProducts: WindowResponse[] = apartment.windows.map(
+    const uniqueWindowsByKey = new Map<string, (typeof apartment.windows)[number]>();
+    for (const window of apartment.windows) {
+      const key = getWindowDisplayKey(window);
+      if (!uniqueWindowsByKey.has(key)) {
+        uniqueWindowsByKey.set(key, window);
+      }
+    }
+    const uniqueWindows = Array.from(uniqueWindowsByKey.values());
+
+    const windowsWithProducts: WindowResponse[] = uniqueWindows.map(
       (window) => {
         const mainProducts: MainProduct[] = [];
         const accessories: Accessory[] = [];

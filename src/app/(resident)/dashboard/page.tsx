@@ -22,6 +22,39 @@ import {
   CalendarDays,
 } from "lucide-react";
 
+function getWindowDisplayKey(window: {
+  windowNumber: string;
+  location: string;
+  widthMm: number;
+  heightMm: number;
+  measureText: string;
+}) {
+  return [
+    window.windowNumber.trim().toLowerCase(),
+    window.location.trim().toLowerCase(),
+    window.widthMm,
+    window.heightMm,
+    window.measureText.trim().toLowerCase(),
+  ].join("|");
+}
+
+function getUniqueWindows<T extends {
+  windowNumber: string;
+  location: string;
+  widthMm: number;
+  heightMm: number;
+  measureText: string;
+}>(windows: T[]) {
+  const byKey = new Map<string, T>();
+  for (const window of windows) {
+    const key = getWindowDisplayKey(window);
+    if (!byKey.has(key)) {
+      byKey.set(key, window);
+    }
+  }
+  return Array.from(byKey.values());
+}
+
 export default async function DashboardPage() {
   const session = await auth();
 
@@ -38,7 +71,12 @@ export default async function DashboardPage() {
           apartment: {
             include: {
               building: true,
-              windows: { orderBy: { windowNumber: "asc" } },
+              windows: {
+                orderBy: [
+                  { windowNumber: "asc" },
+                  { updatedAt: "desc" },
+                ],
+              },
               orders: {
                 orderBy: { createdAt: "desc" },
                 take: 1,
@@ -56,7 +94,13 @@ export default async function DashboardPage() {
   }
 
   const apartments = resident.apartmentLinks.map((link) => link.apartment);
-  const totalWindows = apartments.reduce((sum, apt) => sum + apt.windows.length, 0);
+  const windowsByApartmentId = new Map(
+    apartments.map((apt) => [apt.id, getUniqueWindows(apt.windows)])
+  );
+  const totalWindows = apartments.reduce(
+    (sum, apt) => sum + (windowsByApartmentId.get(apt.id)?.length ?? 0),
+    0
+  );
 
   // Aggregierter Bestellstatus über alle Wohnungen
   const allOrders = apartments.flatMap((apt) => apt.orders);
@@ -66,7 +110,9 @@ export default async function DashboardPage() {
   const hasOrder = latestOrder?.status === "CONFIRMED" || latestOrder?.status === "DRAFT";
   const isConfirmed = latestOrder?.status === "CONFIRMED";
 
-  const allWindows = apartments.flatMap((apt) => apt.windows);
+  const allWindows = apartments.flatMap(
+    (apt) => windowsByApartmentId.get(apt.id) ?? []
+  );
   const orderableWindows = allWindows.filter((w) => w.isOrderable);
   const windowsWithInterest = allWindows.filter(
     (w) => w.sunscreenInterest || w.insectScreenInterest || w.wantsElectricSs
@@ -97,7 +143,7 @@ export default async function DashboardPage() {
                   Haus {apartment.building.houseNumber}, {apartment.topNumber}
                 </CardTitle>
                 <CardDescription>
-                  {apartment.floor} · {apartment.windows.length} Fenster
+                  {apartment.floor} · {windowsByApartmentId.get(apartment.id)?.length ?? 0} Fenster
                 </CardDescription>
               </CardHeader>
               <CardContent>
