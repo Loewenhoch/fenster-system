@@ -55,6 +55,29 @@ function getUniqueWindows<T extends {
   return Array.from(byKey.values());
 }
 
+function getResidentGreeting(resident: {
+  salutation: string | null;
+  title: string | null;
+  firstName: string | null;
+  lastName: string | null;
+}) {
+  const salutation = resident.salutation?.trim().toLowerCase() ?? "";
+  const lastName = resident.lastName?.trim();
+  const title = resident.title?.trim();
+
+  if (lastName) {
+    const prefix = salutation.startsWith("frau")
+      ? "Fr."
+      : salutation.startsWith("herr")
+      ? "Hr."
+      : "";
+
+    return [prefix, title, lastName].filter(Boolean).join(" ");
+  }
+
+  return resident.firstName?.trim() || "Eigentümer";
+}
+
 export default async function DashboardPage() {
   const session = await auth();
 
@@ -114,9 +137,6 @@ export default async function DashboardPage() {
     (apt) => windowsByApartmentId.get(apt.id) ?? []
   );
   const orderableWindows = allWindows.filter((w) => w.isOrderable);
-  const windowsWithInterest = allWindows.filter(
-    (w) => w.sunscreenInterest || w.insectScreenInterest || w.wantsElectricSs
-  );
 
   const multipleApartments = apartments.length > 1;
 
@@ -125,7 +145,7 @@ export default async function DashboardPage() {
       {/* Begrüßung */}
       <div>
         <h1 className="text-2xl font-bold text-primary sm:text-3xl">
-          Willkommen, {resident.firstName || resident.lastName || "Eigentümer"}
+          Willkommen, {getResidentGreeting(resident)}
         </h1>
         <p className="mt-1 text-base text-muted-foreground">
           Hier finden Sie alle Informationen zu Ihren Wohnungen und Bestellungen.
@@ -309,14 +329,6 @@ export default async function DashboardPage() {
                     hour: "2-digit",
                     minute: "2-digit",
                   })}
-                </span>
-              </div>
-            )}
-            {windowsWithInterest.length > 0 && !hasOrder && (
-              <div className="flex items-center gap-3 text-base">
-                <Eye className="size-5 text-accent" />
-                <span>
-                  {windowsWithInterest.length} Fenster mit Sonnenschutz-Interesse markiert
                 </span>
               </div>
             )}

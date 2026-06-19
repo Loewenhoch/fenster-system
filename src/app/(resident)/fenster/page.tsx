@@ -61,6 +61,27 @@ function getUniqueWindows<T extends {
   return Array.from(byKey.values());
 }
 
+function isStreetSide(location: string) {
+  const normalized = location.trim().toLowerCase();
+  return (
+    normalized === "str" ||
+    normalized.includes("straße") ||
+    normalized.includes("strasse") ||
+    normalized.includes("straßenseite") ||
+    normalized.includes("strassenseite")
+  );
+}
+
+function isCourtyardSide(location: string) {
+  return location.trim().toLowerCase().includes("hof");
+}
+
+function getLocationLabel(location: string) {
+  if (isStreetSide(location)) return "Straßenseite";
+  if (isCourtyardSide(location)) return "Hofseite";
+  return location;
+}
+
 export default async function FensterPage({
   searchParams,
 }: {
@@ -118,24 +139,14 @@ export default async function FensterPage({
   const windows = getUniqueWindows(apartment.windows);
   const filteredWindows = filter
     ? windows.filter((w) => {
-        if (filter === "strasse")
-          return (
-            w.location.toLowerCase().includes("straße") ||
-            w.location.toLowerCase().includes("strasse")
-          );
-        if (filter === "hof") return w.location.toLowerCase().includes("hof");
+        if (filter === "strasse") return isStreetSide(w.location);
+        if (filter === "hof") return isCourtyardSide(w.location);
         return true;
       })
     : windows;
 
-  const strasseCount = windows.filter(
-    (w) =>
-      w.location.toLowerCase().includes("straße") ||
-      w.location.toLowerCase().includes("strasse")
-  ).length;
-  const hofCount = windows.filter((w) =>
-    w.location.toLowerCase().includes("hof")
-  ).length;
+  const strasseCount = windows.filter((w) => isStreetSide(w.location)).length;
+  const hofCount = windows.filter((w) => isCourtyardSide(w.location)).length;
 
   return (
     <div className="space-y-6">
@@ -248,7 +259,7 @@ export default async function FensterPage({
                     <TableCell className="text-base">
                       <div className="flex items-center gap-2">
                         <MapPin className="size-4 text-muted-foreground" />
-                        {window.location}
+                        {getLocationLabel(window.location)}
                       </div>
                     </TableCell>
                     <TableCell className="text-base">
