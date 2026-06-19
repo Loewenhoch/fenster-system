@@ -26,7 +26,10 @@ import {
   CheckCircle2,
   XCircle,
   Home,
+  FileText,
+  ExternalLink,
 } from "lucide-react";
+import { BUILDING_VIEW_LINKS, getApartmentPlanLinks } from "@/lib/floor-plans";
 
 function getWindowDisplayKey(window: {
   windowNumber: string;
@@ -147,6 +150,10 @@ export default async function FensterPage({
 
   const strasseCount = windows.filter((w) => isStreetSide(w.location)).length;
   const hofCount = windows.filter((w) => isCourtyardSide(w.location)).length;
+  const apartmentPlanLinks = getApartmentPlanLinks(
+    apartment.building.houseNumber,
+    apartment.floor
+  );
 
   return (
     <div className="space-y-6">
@@ -189,8 +196,51 @@ export default async function FensterPage({
         <span className="font-semibold text-foreground">
           Haus {apartment.building.houseNumber}, {apartment.topNumber}
         </span>
-        {" · "}
+        {" - "}
+        {apartment.floor}
+        {" - "}
         {windows.length} Fenster
+      </div>
+
+      <div className="rounded-lg border bg-card p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-primary">
+              Grundrisse & Ansichten
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Oeffnen Sie den passenden Plan, um die Fensterposition im Grundriss nachzusehen.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2 sm:justify-end">
+            {apartmentPlanLinks.map((plan) => (
+              <a
+                key={plan.href}
+                href={plan.href}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex min-h-[44px] items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+              >
+                <FileText className="size-4 text-accent" />
+                {plan.label}
+                <ExternalLink className="size-3 text-muted-foreground" />
+              </a>
+            ))}
+            {BUILDING_VIEW_LINKS.map((plan) => (
+              <a
+                key={plan.href}
+                href={plan.href}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex min-h-[44px] items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+              >
+                <FileText className="size-4 text-accent" />
+                {plan.label}
+                <ExternalLink className="size-3 text-muted-foreground" />
+              </a>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Filter */}
