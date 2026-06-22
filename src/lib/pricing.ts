@@ -16,6 +16,7 @@ export const MOUNTABLE_CATEGORIES = new Set([
 export interface PricingWindow {
   widthMm?: number | null;
   rekordTypeNew?: string | null;
+  priceReceiver?: number | null;
   hasExistingSunscreen?: boolean | null;
   hasElectricSunscreen?: boolean | null;
   requiresManipulationFee?: boolean | null;
@@ -65,6 +66,13 @@ export function getSunscreenQuantity(
   if ((window.widthMm ?? 0) >= 2800) return 2;
 
   return 1;
+}
+
+export function getIncludedReceiverUnitPrice(
+  window: PricingWindow,
+  fallbackUnitPrice?: number | null
+): number {
+  return window.priceReceiver ?? fallbackUnitPrice ?? 0;
 }
 
 export function getMountingFees(window: PricingWindow): {

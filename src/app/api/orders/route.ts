@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
   getExistingSunscreenCategory,
+  getIncludedReceiverUnitPrice,
   getMountingFees,
   getSunscreenQuantity,
   isIncludedExistingSunscreen,
@@ -12,7 +13,6 @@ import {
 import { NextResponse } from "next/server";
 
 const ACCESSORY_CATEGORIES = new Set([
-  "RECEIVER",
   "SENDER_1CH",
   "SENDER_15CH",
 ]);
@@ -42,7 +42,8 @@ function getUnitPrice(
     hasElectricSunscreen: boolean;
     requiresManipulationFee: boolean;
   },
-  product: { category: string; unitPrice: number }
+  product: { category: string; unitPrice: number },
+  includedReceiverFallbackUnitPrice?: number | null
 ): { unitPrice: number; isComplete: boolean; isIncludedRestoration: boolean } {
   const productCategory = product.category;
 
@@ -51,11 +52,15 @@ function getUnitPrice(
   }
 
   if (productCategory === "SUNSCREEN_MOTOR") {
+    const includedReceiverUnitPrice = getIncludedReceiverUnitPrice(
+      window,
+      includedReceiverFallbackUnitPrice
+    );
     if (window.priceMotorMaterial && window.priceMotorMaterial > 0) {
-      return { unitPrice: window.priceMotorMaterial, isComplete: false, isIncludedRestoration: false };
+      return { unitPrice: window.priceMotorMaterial + includedReceiverUnitPrice, isComplete: false, isIncludedRestoration: false };
     }
     if (window.priceMotorComplete && window.priceMotorComplete > 0) {
-      return { unitPrice: window.priceMotorComplete, isComplete: true, isIncludedRestoration: false };
+      return { unitPrice: window.priceMotorComplete + includedReceiverUnitPrice, isComplete: true, isIncludedRestoration: false };
     }
     return { unitPrice: 0, isComplete: false, isIncludedRestoration: false };
   }
@@ -72,7 +77,7 @@ function getUnitPrice(
     return { unitPrice: window.priceIsgWindow ?? window.priceIsgDoor ?? 0, isComplete: false, isIncludedRestoration: false };
   }
   if (productCategory === "RECEIVER") {
-    return { unitPrice: window.priceReceiver ?? product.unitPrice ?? 0, isComplete: false, isIncludedRestoration: false };
+    return { unitPrice: 0, isComplete: false, isIncludedRestoration: false };
   }
   if (productCategory === "SENDER_1CH") {
     return { unitPrice: window.priceSender1Ch ?? product.unitPrice ?? 0, isComplete: false, isIncludedRestoration: false };
@@ -153,7 +158,9 @@ export async function POST(req: Request) {
       where: { apartmentId },
     });
 
-    const normalizedItems: OrderItemInput[] = [...items];
+    const normalizedItems: OrderItemInput[] = items.filter(
+      (item) => item.productId !== "RECEIVER"
+    );
     const selectedKeys = new Set(
       normalizedItems.map((item) => `${item.windowId}:${item.productId}`)
     );
@@ -170,7 +177,12 @@ export async function POST(req: Request) {
     }
 
     const windowIds = [...new Set(normalizedItems.map((i) => i.windowId).filter(Boolean))];
-    const productIds = [...new Set(normalizedItems.map((i) => i.productId).filter(Boolean))];
+    const productIds = [
+      ...new Set([
+        ...normalizedItems.map((i) => i.productId).filter(Boolean),
+        "RECEIVER",
+      ]),
+    ];
 
     const windows = apartmentWindows.filter((window) => windowIds.includes(window.id));
     const products = await prisma.product.findMany({
@@ -243,7 +255,11 @@ export async function POST(req: Request) {
           }
         }
 
-        const { unitPrice, isComplete, isIncludedRestoration } = getUnitPrice(window, product);
+        const { unitPrice, isComplete, isIncludedRestoration } = getUnitPrice(
+          window,
+          product,
+          productMap.get("RECEIVER")?.unitPrice
+        );
         if (unitPrice <= 0 && !isIncludedRestoration) {
           throw new Error(`Produkt ${product.name} nicht für Fenster ${window.windowNumber} verfügbar`);
         }

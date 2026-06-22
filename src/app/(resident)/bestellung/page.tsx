@@ -108,7 +108,9 @@ function normalizeSelectionsForIncludedRestoration(
   windows: WindowWithProducts[],
   selections: OrderSelection[]
 ): OrderSelection[] {
-  let normalized = [...selections];
+  let normalized = selections.filter(
+    (selection) => selection.category !== "RECEIVER" && selection.productId !== "RECEIVER"
+  );
 
   for (const win of windows) {
     const includedProduct = win.mainProducts.find((p) => p.isIncludedRestoration);
@@ -526,7 +528,7 @@ function BestellungContent() {
                       <div className="border-t pt-4">
                         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-2">
                           <Radio className="size-4" />
-                          Zubehör für Motorsteuerung
+                          Sender für Motorsteuerung
                         </h3>
                         <div className="space-y-2">
                           {win.accessories.map((accessory) => {
@@ -555,9 +557,6 @@ function BestellungContent() {
                                     htmlFor={`${win.id}-${accessory.id}`}
                                     className="flex flex-wrap items-center gap-2 text-base font-medium cursor-pointer"
                                   >
-                                    {accessory.category === "RECEIVER" && (
-                                      <Radio className="size-4 text-accent shrink-0" />
-                                    )}
                                     {(accessory.category === "SENDER_1CH" ||
                                       accessory.category === "SENDER_15CH") && (
                                       <Smartphone className="size-4 text-accent shrink-0" />
@@ -588,8 +587,7 @@ function BestellungContent() {
                       win.mainProducts.some((p) => p.type === "MOTOR") && (
                         <p className="text-sm text-muted-foreground flex items-center gap-1">
                           <Radio className="size-3" />
-                          Wählen Sie &quot;Sonnenschutz mit Motor&quot; aus, um Zubehör
-                          (Funkempfänger, Handsender) hinzuzufügen.
+                          Wählen Sie &quot;Sonnenschutz mit Motor&quot; aus, um optionale Sender hinzuzufügen.
                         </p>
                       )}
                   </div>

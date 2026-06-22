@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
   getExistingSunscreenCategory,
+  getIncludedReceiverUnitPrice,
   getMountingFees,
   getSunscreenQuantity,
 } from "@/lib/pricing";
@@ -159,6 +160,11 @@ export async function GET(request: Request) {
             : null;
 
         const existingSunscreenCategory = getExistingSunscreenCategory(window);
+        const receiverProduct = productMap.get("RECEIVER");
+        const includedReceiverUnitPrice = getIncludedReceiverUnitPrice(
+          window,
+          receiverProduct?.unitPrice
+        );
 
         // 1. Behang mit Gurt
         if (
@@ -202,7 +208,9 @@ export async function GET(request: Request) {
           const p = productMap.get("SUNSCREEN_MOTOR");
           if (p) {
             const isIncludedRestoration = existingSunscreenCategory === p.category;
-            const unitPrice = isIncludedRestoration ? 0 : motorPrice?.unitPrice ?? 0;
+            const unitPrice = isIncludedRestoration
+              ? 0
+              : (motorPrice?.unitPrice ?? 0) + includedReceiverUnitPrice;
             const quantity = getSunscreenQuantity(window, p.category);
             const materialTotal = unitPrice * quantity;
             const { installationFee, manipulationFee } =
@@ -212,7 +220,7 @@ export async function GET(request: Request) {
               name: p.name,
               description: isIncludedRestoration
                 ? "Vorhandener Sonnenschutz wird kostenlos wieder montiert."
-                : p.description,
+                : "Inklusive Funkempfänger. Sender können optional dazubestellt werden.",
               category: p.category,
               type: "MOTOR",
               unitPrice,
@@ -254,20 +262,6 @@ export async function GET(request: Request) {
 
         // === ZUBEHÖR (nur wenn Motor überhaupt möglich ist UND Preis > 0) ===
         if (window.isMotorPossible) {
-          const receiver = productMap.get("RECEIVER");
-          if (receiver) {
-            const unitPrice = window.priceReceiver ?? receiver.unitPrice ?? 0;
-            if (unitPrice > 0) {
-              accessories.push({
-                id: receiver.id,
-                name: receiver.name,
-                description: receiver.description,
-                category: receiver.category,
-                unitPrice,
-              });
-            }
-          }
-
           const sender1 = productMap.get("SENDER_1CH");
           if (sender1) {
             const unitPrice = window.priceSender1Ch ?? sender1.unitPrice ?? 0;
