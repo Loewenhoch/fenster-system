@@ -10,22 +10,20 @@ export default function ImpressumPage() {
         </CardHeader>
         <CardContent className="space-y-4 text-base text-muted-foreground">
           <p>
-            <strong>Starhembergstraße 64/66</strong>
+            <strong>DI Platzer ZT GmbH</strong>
             <br />
-            Starhembergstraße 64/66
+            Margarethen 33a
             <br />
-            Linz, OO, Austria
+            4020 Linz, Austria
           </p>
           <p>
             <strong>Kontakt:</strong>
             <br />
             E-Mail: zt@platzer.co.at
             <br />
-            Telefon: 0732 781022
+            Telefon: 0732 7810220
           </p>
-          <p>
-            Verantwortlich für den Inhalt: Starhembergstraße 64/66
-          </p>
+          <p>Verantwortlich für den Inhalt: DI Platzer ZT GmbH</p>
         </CardContent>
       </Card>
     </div>
