@@ -63,9 +63,11 @@ export function Footer() {
                   aria-hidden="true"
                 />
                 <span className="text-base text-muted-foreground">
-                  Starhembergstraße 64/66
+                  DI Platzer ZT GmbH
                   <br />
-                  Linz, OO, Austria
+                  Margarethen 33a
+                  <br />
+                  4020 Linz, Austria
                 </span>
               </li>
               <li className="flex items-center gap-3">
@@ -86,10 +88,10 @@ export function Footer() {
                   aria-hidden="true"
                 />
                 <a
-                  href="tel:+43732781022"
+                  href="tel:+437327810220"
                   className="text-base text-muted-foreground transition-colors hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
-                  0732 781022
+                  0732 7810220
                 </a>
               </li>
             </ul>
