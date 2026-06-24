@@ -636,11 +636,8 @@ function BestellungContent() {
                                       {product.description}
                                     </p>
                                   )}
-                                  {/* Preisaufschlüsselung */}
-                                  <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground">
-                                    {isLocked ? (
-                                      <span>Kostenlose Wiederherstellung des vorhandenen Sonnenschutzes</span>
-                                    ) : (
+                                  {!isLocked && (
+                                    <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground">
                                       <span>
                                         Material:{" "}
                                         {product.quantity > 1
@@ -653,8 +650,8 @@ function BestellungContent() {
                                               .toFixed(2)
                                               .replace(".", ",")} \u20ac`}
                                       </span>
-                                    )}
-                                  </div>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             );
