@@ -6,6 +6,17 @@ const prisma = new PrismaClient();
 
 type SeedData = Record<string, Array<Record<string, unknown>>>;
 
+const ELECTRIC_EXISTING_SUNSCREEN_WINDOW_IDS = new Set([
+  "cmqhzalhr00nxidsl8x8iv1qq", // H66 Top 14, 178f.1
+  "cmqhzalhw00nzidsl7tkp8od6", // H66 Top 14, 179f
+  "cmqhzali100o1idsl6u7z6021", // H66 Top 14, 180f
+  "cmqhzali600o3idsl6k5ckcgj", // H66 Top 14, 181f (180f)
+  "cmqhzallp00pfidslxz3nquke", // H66 Top 22, 205f
+  "cmqhzalv000t1idslypwylfge", // H66 Top 43, 270f.1
+  "cmqhzalv400t3idsl2lfqmz1w", // H66 Top 43, 271f.1
+  "cmqhzalva00t5idslh5pfxqg9", // H66 Top 43, 272f.1
+]);
+
 const conflictFieldsByModel: Record<string, string[]> = {
   Apartment: ["buildingId", "topNumber"],
   Building: ["houseNumber"],
@@ -103,7 +114,9 @@ async function removeStaleSeedWindows(rows: Array<Record<string, unknown>>) {
 }
 
 function migrateSeedData(data: SeedData): SeedData {
-  const windows = normalizeWindowCordPrices(data.Window ?? []);
+  const windows = normalizeElectricExistingSunscreens(
+    normalizeWindowCordPrices(data.Window ?? [])
+  );
   const residentApartments: Array<Record<string, unknown>> = [];
   const residents = (data.Resident ?? []).map((row) => {
     const {
@@ -135,6 +148,23 @@ function migrateSeedData(data: SeedData): SeedData {
     Window: windows,
     ResidentApartment: data.ResidentApartment ?? residentApartments,
   };
+}
+
+function normalizeElectricExistingSunscreens(rows: Array<Record<string, unknown>>) {
+  return rows.map((row) => {
+    if (
+      typeof row.id === "string" &&
+      ELECTRIC_EXISTING_SUNSCREEN_WINDOW_IDS.has(row.id)
+    ) {
+      return {
+        ...row,
+        hasExistingSunscreen: true,
+        hasElectricSunscreen: true,
+      };
+    }
+
+    return row;
+  });
 }
 
 function asPositiveNumber(value: unknown): number | null {

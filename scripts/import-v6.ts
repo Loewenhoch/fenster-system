@@ -47,6 +47,17 @@ function isNichtMoeglich(val: unknown): boolean {
   return String(val).toLowerCase().includes("nicht möglich");
 }
 
+function hasElectricExistingSunscreen(val: unknown): boolean {
+  if (val === null || val === undefined) return false;
+  const normalized = String(val).trim().toLowerCase();
+  return (
+    normalized === "ja" ||
+    normalized === "x" ||
+    normalized.includes("e best") ||
+    normalized.includes("elekt")
+  );
+}
+
 async function importBuildings() {
   console.log("Importiere Gebäude...");
   const b64 = await prisma.building.upsert({
@@ -275,7 +286,7 @@ async function importWindowsV6(buildings: ImportedBuildings) {
         heightMm,
         measureText: `${widthMm}x${heightMm}`,
         hasExistingSunscreen: hasExistingSS,
-        hasElectricSunscreen: String(elektSS).toLowerCase() === "ja" || String(elektSS).toLowerCase() === "x",
+        hasElectricSunscreen: hasElectricExistingSunscreen(elektSS),
         sunscreenInterest: String(ssInt).toLowerCase().includes("int"),
         insectScreenInterest: String(isInt).toLowerCase().includes("int"),
         wantsElectricSs: String(wunschESS).toLowerCase() === "ja" || String(wunschESS).toLowerCase() === "x",
