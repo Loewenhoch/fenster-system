@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
   getExistingSunscreenCategory,
+  getInsectScreenUnitPrice,
   getIncludedReceiverUnitPrice,
   getMountingFees,
   getSunscreenQuantity,
@@ -99,7 +100,7 @@ function getUnitPrice(
     return { unitPrice: 0, isComplete: false, isIncludedRestoration: false };
   }
   if (productCategory === "INSECT_SCREEN") {
-    return { unitPrice: window.priceIsgWindow ?? window.priceIsgDoor ?? 0, isComplete: false, isIncludedRestoration: false };
+    return { unitPrice: getInsectScreenUnitPrice(window), isComplete: false, isIncludedRestoration: false };
   }
   if (productCategory === "RECEIVER") {
     return { unitPrice: 0, isComplete: false, isIncludedRestoration: false };
@@ -316,7 +317,7 @@ export async function POST(req: Request) {
         if (product.category === "SUNSCREEN_CORD" && (!window.isCordPossible || (!hasCordPrice && includedCategory !== "SUNSCREEN_CORD"))) {
           throw new Error(`Produkt ${product.name} nicht fuer Fenster ${window.windowNumber} verfuegbar`);
         }
-        if (product.category === "INSECT_SCREEN" && (!window.priceIsgWindow || window.priceIsgWindow <= 0) && (!window.priceIsgDoor || window.priceIsgDoor <= 0)) {
+        if (product.category === "INSECT_SCREEN" && getInsectScreenUnitPrice(window) <= 0) {
           throw new Error(`Produkt ${product.name} nicht für Fenster ${window.windowNumber} verfügbar`);
         }
         if (ACCESSORY_CATEGORIES.has(product.category)) {

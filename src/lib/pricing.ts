@@ -19,6 +19,8 @@ export interface PricingWindow {
   widthMm?: number | null;
   rekordTypeNew?: string | null;
   priceReceiver?: number | null;
+  priceIsgWindow?: number | null;
+  priceIsgDoor?: number | null;
   hasExistingSunscreen?: boolean | null;
   hasElectricSunscreen?: boolean | null;
   requiresManipulationFee?: boolean | null;
@@ -90,6 +92,25 @@ export function getIncludedReceiverUnitPrice(
   fallbackUnitPrice?: number | null
 ): number {
   return window.priceReceiver ?? fallbackUnitPrice ?? 0;
+}
+
+function positiveOrZero(value?: number | null): number {
+  return value && value > 0 ? value : 0;
+}
+
+export function getInsectScreenUnitPrice(
+  window: Pick<PricingWindow, "priceIsgWindow" | "priceIsgDoor">
+): number {
+  return positiveOrZero(window.priceIsgWindow) + positiveOrZero(window.priceIsgDoor);
+}
+
+export function hasCombinedInsectScreen(
+  window: Pick<PricingWindow, "priceIsgWindow" | "priceIsgDoor">
+): boolean {
+  return (
+    positiveOrZero(window.priceIsgWindow) > 0 &&
+    positiveOrZero(window.priceIsgDoor) > 0
+  );
 }
 
 export function getMountingFees(window: PricingWindow): {

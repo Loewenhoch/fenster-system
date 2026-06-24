@@ -2,10 +2,12 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
   getExistingSunscreenCategory,
+  getInsectScreenUnitPrice,
   getIncludedReceiverUnitPrice,
   getMountingFees,
   getSunscreenQuantity,
   getWindowTypeLabel,
+  hasCombinedInsectScreen,
   isNonOrderableWindowType,
 } from "@/lib/pricing";
 import { NextResponse } from "next/server";
@@ -246,7 +248,7 @@ export async function GET(request: Request) {
         }
 
         // 3. Insektenschutz
-        const isgPrice = window.priceIsgWindow ?? window.priceIsgDoor;
+        const isgPrice = getInsectScreenUnitPrice(window);
         if (!isTypeBlocked && isgPrice && isgPrice > 0) {
           const p = productMap.get("INSECT_SCREEN");
           if (p) {
@@ -257,8 +259,12 @@ export async function GET(request: Request) {
               getMountingFees(window);
             mainProducts.push({
               id: p.id,
-              name: p.name,
-              description: p.description,
+              name: hasCombinedInsectScreen(window)
+                ? `${p.name} (Fenster + Tür)`
+                : p.name,
+              description: hasCombinedInsectScreen(window)
+                ? "Insektenschutz für Fenster und Tür dieser Loggia."
+                : p.description,
               category: p.category,
               type: "INSECT",
               unitPrice,
