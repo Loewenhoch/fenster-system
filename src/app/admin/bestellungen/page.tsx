@@ -31,7 +31,9 @@ interface OrderItem {
     location: string;
     widthMm: number;
     heightMm: number;
+    rekordTypeNew: string | null;
   };
+  windowTypeLabel: string | null;
   unitPrice: number;
   installationFee: number;
   manipulationFee: number;
@@ -68,6 +70,12 @@ interface Order {
     building: { houseNumber: string };
   };
   items: OrderItem[];
+  typeSummary: {
+    windowTypeLabel: string;
+    productName: string;
+    category: string;
+    quantity: number;
+  }[];
   priceSummary: {
     materialTotal: number;
     installationTotal: number;
@@ -255,6 +263,7 @@ export default function AdminBestellungenPage() {
                                           <span className="text-xs">
                                             {item.window.location} · {item.window.widthMm}x
                                             {item.window.heightMm} mm
+                                            {item.windowTypeLabel ? ` · ${item.windowTypeLabel}` : ""}
                                             {item.quantity > 1 ? ` · ${item.quantity} Stk.` : ""}
                                           </span>
                                         </td>
@@ -279,6 +288,40 @@ export default function AdminBestellungenPage() {
                                   </tbody>
                                 </table>
                               </div>
+
+                              {o.typeSummary.length > 0 && (
+                                <div className="border rounded-lg p-4 space-y-3 text-sm">
+                                  <div>
+                                    <h3 className="font-semibold text-primary">
+                                      Typ-Auswertung
+                                    </h3>
+                                    <p className="text-xs text-muted-foreground">
+                                      Zusammenfassung für Materialbestellung nach Fenstertyp.
+                                    </p>
+                                  </div>
+                                  <div className="space-y-2">
+                                    {o.typeSummary.map((summary) => (
+                                      <div
+                                        key={`${summary.windowTypeLabel}-${summary.category}-${summary.productName}`}
+                                        className="flex items-center justify-between gap-3 rounded-md bg-secondary px-3 py-2"
+                                      >
+                                        <div>
+                                          <span className="font-medium">
+                                            {summary.windowTypeLabel}
+                                          </span>
+                                          <span className="text-muted-foreground">
+                                            {" · "}
+                                            {summary.productName}
+                                          </span>
+                                        </div>
+                                        <span className="font-semibold">
+                                          {summary.quantity} Stk.
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
 
                               <div className="border rounded-lg p-4 space-y-2 text-sm">
                                 <div className="flex justify-between">

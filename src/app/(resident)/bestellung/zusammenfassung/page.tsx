@@ -38,6 +38,7 @@ interface WindowInfo {
   windowNumber: string;
   location: string;
   requiresManipulationFee: boolean;
+  windowTypeLabel: string | null;
 }
 
 const STEP = 2;
@@ -245,6 +246,7 @@ function ZusammenfassungContent() {
                       <Home className="size-4" />
                       Fenster {win?.windowNumber || selection.windowId.slice(0, 6)}
                       {win?.location && ` · ${win.location}`}
+                      {win?.windowTypeLabel && ` · ${win.windowTypeLabel}`}
                     </div>
                     {/* Preisaufschlüsselung pro Zeile */}
                     <div className="mt-1 flex flex-wrap gap-x-3 text-xs text-muted-foreground">

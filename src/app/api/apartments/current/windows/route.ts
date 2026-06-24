@@ -5,6 +5,8 @@ import {
   getIncludedReceiverUnitPrice,
   getMountingFees,
   getSunscreenQuantity,
+  getWindowTypeLabel,
+  isNonOrderableWindowType,
 } from "@/lib/pricing";
 import { NextResponse } from "next/server";
 
@@ -44,6 +46,9 @@ interface WindowResponse {
   hasElectricSunscreen: boolean;
   requiresManipulationFee: boolean;
   rekordTypeNew: string | null;
+  windowTypeLabel: string | null;
+  isTypeBlocked: boolean;
+  unavailableReason: string | null;
   isMotorPossible: boolean;
   isCordPossible: boolean;
   mainProducts: MainProduct[];
@@ -140,6 +145,10 @@ export async function GET(request: Request) {
       (window) => {
         const mainProducts: MainProduct[] = [];
         const accessories: Accessory[] = [];
+        const isTypeBlocked = isNonOrderableWindowType(window);
+        const unavailableReason = isTypeBlocked
+          ? "Typ 7: Montage von Sonnenschutz oder Insektenschutz ist technisch nicht möglich."
+          : null;
 
         // === HAUPTPRODUKTE ===
         // Verfügbarkeit: Preis > 0 UND technisch möglich ("nicht möglich" steht nicht in Excel)
@@ -168,6 +177,7 @@ export async function GET(request: Request) {
 
         // 1. Behang mit Gurt
         if (
+          !isTypeBlocked &&
           window.isCordPossible &&
           (cordPrice || existingSunscreenCategory === "SUNSCREEN_CORD") &&
           (!existingSunscreenCategory || existingSunscreenCategory === "SUNSCREEN_CORD")
@@ -201,6 +211,7 @@ export async function GET(request: Request) {
 
         // 2. Behang inkl. Motor
         if (
+          !isTypeBlocked &&
           window.isMotorPossible &&
           (motorPrice || existingSunscreenCategory === "SUNSCREEN_MOTOR") &&
           (!existingSunscreenCategory || existingSunscreenCategory === "SUNSCREEN_MOTOR")
@@ -236,7 +247,7 @@ export async function GET(request: Request) {
 
         // 3. Insektenschutz
         const isgPrice = window.priceIsgWindow ?? window.priceIsgDoor;
-        if (isgPrice && isgPrice > 0) {
+        if (!isTypeBlocked && isgPrice && isgPrice > 0) {
           const p = productMap.get("INSECT_SCREEN");
           if (p) {
             const unitPrice = isgPrice;
@@ -261,7 +272,7 @@ export async function GET(request: Request) {
         }
 
         // === ZUBEHÖR (nur wenn Motor überhaupt möglich ist UND Preis > 0) ===
-        if (window.isMotorPossible) {
+        if (!isTypeBlocked && window.isMotorPossible) {
           const sender1 = productMap.get("SENDER_1CH");
           if (sender1) {
             const unitPrice = window.priceSender1Ch ?? sender1.unitPrice ?? 0;
@@ -302,6 +313,9 @@ export async function GET(request: Request) {
           hasElectricSunscreen: window.hasElectricSunscreen,
           requiresManipulationFee: window.requiresManipulationFee,
           rekordTypeNew: window.rekordTypeNew,
+          windowTypeLabel: getWindowTypeLabel(window),
+          isTypeBlocked,
+          unavailableReason,
           isMotorPossible: window.isMotorPossible,
           isCordPossible: window.isCordPossible,
           mainProducts,

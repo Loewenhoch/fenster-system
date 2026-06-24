@@ -1,6 +1,13 @@
 import { auth, isAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getWindowTypeLabel } from "@/lib/pricing";
 import { NextResponse } from "next/server";
+
+const TYPE_SUMMARY_CATEGORIES = new Set([
+  "SUNSCREEN_CORD",
+  "SUNSCREEN_MOTOR",
+  "INSECT_SCREEN",
+]);
 
 export async function GET() {
   try {
@@ -50,6 +57,7 @@ export async function GET() {
                 location: true,
                 widthMm: true,
                 heightMm: true,
+                rekordTypeNew: true,
               },
             },
           },
@@ -62,6 +70,7 @@ export async function GET() {
     const ordersWithDetails = orders.map((order) => {
       const itemDetails = order.items.map((item) => ({
         ...item,
+        windowTypeLabel: item.window ? getWindowTypeLabel(item.window) : null,
         priceBreakdown: {
           unitPrice: item.unitPrice,
           installationFee: item.installationFee,
@@ -69,10 +78,43 @@ export async function GET() {
           lineTotal: item.totalPrice,
         },
       }));
+      const typeSummaryMap = new Map<
+        string,
+        {
+          windowTypeLabel: string;
+          productName: string;
+          category: string;
+          quantity: number;
+        }
+      >();
+
+      for (const item of itemDetails) {
+        if (!TYPE_SUMMARY_CATEGORIES.has(item.product.category)) continue;
+
+        const windowTypeLabel = item.windowTypeLabel ?? "Typ unbekannt";
+        const key = `${windowTypeLabel}|${item.product.category}|${item.product.name}`;
+        const current =
+          typeSummaryMap.get(key) ?? {
+            windowTypeLabel,
+            productName: item.product.name,
+            category: item.product.category,
+            quantity: 0,
+          };
+        current.quantity += item.quantity;
+        typeSummaryMap.set(key, current);
+      }
 
       return {
         ...order,
         items: itemDetails,
+        typeSummary: Array.from(typeSummaryMap.values()).sort((a, b) => {
+          const typeCompare = a.windowTypeLabel.localeCompare(
+            b.windowTypeLabel,
+            "de",
+            { numeric: true }
+          );
+          return typeCompare || a.productName.localeCompare(b.productName, "de");
+        }),
         priceSummary: {
           materialTotal: order.materialTotal,
           installationTotal: order.installationTotal,

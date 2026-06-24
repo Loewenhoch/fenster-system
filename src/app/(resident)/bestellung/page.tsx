@@ -71,6 +71,10 @@ interface WindowWithProducts {
   hasExistingSunscreen: boolean;
   hasElectricSunscreen: boolean;
   requiresManipulationFee: boolean;
+  rekordTypeNew: string | null;
+  windowTypeLabel: string | null;
+  isTypeBlocked: boolean;
+  unavailableReason: string | null;
   isMotorPossible: boolean;
   isCordPossible: boolean;
   mainProducts: MainProduct[];
@@ -399,9 +403,20 @@ function BestellungContent() {
                     <CardDescription>
                       {win.location} · {win.widthMm} x {win.heightMm} mm ·{" "}
                       {win.measureText}
+                      {win.windowTypeLabel && <> · {win.windowTypeLabel}</>}
                     </CardDescription>
                   </div>
                   <div className="flex flex-wrap gap-1 items-center">
+                    {win.windowTypeLabel && (
+                      <Badge variant={win.isTypeBlocked ? "destructive" : "outline"}>
+                        {win.windowTypeLabel}
+                      </Badge>
+                    )}
+                    {win.isTypeBlocked && (
+                      <Badge variant="destructive">
+                        nicht montierbar
+                      </Badge>
+                    )}
                     {win.requiresManipulationFee && (
                       <Badge
                         variant="secondary"
@@ -441,7 +456,8 @@ function BestellungContent() {
                       </h3>
                       {win.mainProducts.length === 0 ? (
                         <p className="text-base text-muted-foreground py-2">
-                          Für dieses Fenster sind aktuell keine Sonnenschutz-Produkte verfügbar.
+                          {win.unavailableReason ??
+                            "Für dieses Fenster sind aktuell keine Sonnenschutz-Produkte verfügbar."}
                         </p>
                       ) : (
                         <div className="space-y-2">

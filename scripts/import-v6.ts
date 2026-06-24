@@ -63,12 +63,15 @@ async function importBuildings() {
   return { b64, b66 };
 }
 
-async function importApartmentsAndOwners(buildings: { b64: any; b66: any }) {
+type ImportedBuildings = Awaited<ReturnType<typeof importBuildings>>;
+type SheetRow = unknown[];
+
+async function importApartmentsAndOwners(buildings: ImportedBuildings) {
   console.log("Importiere Wohnungen und EIGENTÜMER (keine Mieter)...");
   const file = path.join(DATA_DIR, "20260429 Wohnungsübersicht-Tops +Zusatzinfos.xlsm");
   const wb = xlsx.readFile(file);
   const sheet = wb.Sheets["Daten"];
-  const data = xlsx.utils.sheet_to_json(sheet, { header: 1, blankrows: false }) as any[][];
+  const data = xlsx.utils.sheet_to_json(sheet, { header: 1, blankrows: false }) as SheetRow[];
   const rows = data.slice(2);
 
   let apartmentCount = 0;
@@ -176,12 +179,12 @@ async function importApartmentsAndOwners(buildings: { b64: any; b66: any }) {
   console.log(`  ${apartmentCount} Wohnungen, ${ownerCount} Eigentümer importiert`);
 }
 
-async function importWindowsV6(buildings: { b64: any; b66: any }) {
+async function importWindowsV6(buildings: ImportedBuildings) {
   console.log("Importiere Fenster aus V6-Datei...");
   const file = path.join(DATA_DIR, "AusführungsKontrolle + Infos 2026.05.27 - bearb Kopie von 2025.10.14 - V6.xlsm");
   const wb = xlsx.readFile(file);
   const sheet = wb.Sheets["Zusammenschnitt Fenstertypen"];
-  const data = xlsx.utils.sheet_to_json(sheet, { header: 1, blankrows: false }) as any[][];
+  const data = xlsx.utils.sheet_to_json(sheet, { header: 1, blankrows: false }) as SheetRow[];
   const rows = data.slice(3);
 
   let windowCount = 0;
@@ -202,6 +205,8 @@ async function importWindowsV6(buildings: { b64: any; b66: any }) {
     const wunschESS = row[17];
     const rekordOld = row[19];
     const rekordNew = row[20];
+    const rekordTypeNew = rekordNew ? String(rekordNew).trim() : null;
+    const isOrderable = rekordTypeNew !== "7";
 
     // Preisfelder aus V6
     // Col V(21)=Rollo mit Motor komplett, Col W(22)=Rollo mit Gurt komplett
@@ -275,7 +280,8 @@ async function importWindowsV6(buildings: { b64: any; b66: any }) {
         insectScreenInterest: String(isInt).toLowerCase().includes("int"),
         wantsElectricSs: String(wunschESS).toLowerCase() === "ja" || String(wunschESS).toLowerCase() === "x",
         rekordTypeOld: rekordOld ? String(rekordOld).trim() : null,
-        rekordTypeNew: rekordNew ? String(rekordNew).trim() : null,
+        rekordTypeNew,
+        isOrderable,
         // Preise
         priceMotorComplete,
         priceCordComplete: effectiveCordComplete,

@@ -7,6 +7,7 @@ import {
   getSunscreenQuantity,
   isIncludedExistingSunscreen,
   isMountableCategory,
+  isNonOrderableWindowType,
   isSunscreenCategory,
   VAT_RATE,
 } from "@/lib/pricing";
@@ -166,6 +167,8 @@ export async function POST(req: Request) {
     );
 
     for (const window of apartmentWindows) {
+      if (isNonOrderableWindowType(window)) continue;
+
       const includedCategory = getExistingSunscreenCategory(window);
       if (!includedCategory) continue;
 
@@ -223,6 +226,9 @@ export async function POST(req: Request) {
         }
         if (!product) {
           throw new Error(`Produkt ${item.productId} nicht gefunden`);
+        }
+        if (isNonOrderableWindowType(window)) {
+          throw new Error(`Fenster ${window.windowNumber} ist Typ 7 und nicht bestellbar`);
         }
 
         // Verfügbarkeitsprüfung: Produkt muss für dieses Fenster verfügbar sein

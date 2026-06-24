@@ -41,6 +41,17 @@ export function isMountableCategory(category: string): boolean {
   return MOUNTABLE_CATEGORIES.has(category);
 }
 
+export function getWindowTypeLabel(window: Pick<PricingWindow, "rekordTypeNew">): string | null {
+  const type = window.rekordTypeNew?.trim();
+  return type ? `Typ ${type}` : null;
+}
+
+export function isNonOrderableWindowType(
+  window: Pick<PricingWindow, "rekordTypeNew">
+): boolean {
+  return window.rekordTypeNew?.trim() === "7";
+}
+
 export function getExistingSunscreenCategory(
   window: PricingWindow
 ): "SUNSCREEN_MOTOR" | "SUNSCREEN_CORD" | null {
