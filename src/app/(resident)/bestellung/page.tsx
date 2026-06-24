@@ -28,6 +28,7 @@ import {
 import {
   ArrowRight,
   ArrowLeft,
+  Send,
   Sun,
   Bug,
   Radio,
@@ -37,6 +38,11 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
+import {
+  NO_ORDER_CATEGORY,
+  NO_ORDER_PRODUCT_ID,
+  isNoOrderCategory,
+} from "@/lib/pricing";
 
 interface MainProduct {
   id: string;
@@ -91,6 +97,20 @@ interface ApartmentOption {
 const STEP = 1;
 const TOTAL_STEPS = 3;
 
+function toNoOrderSelection(windowId: string): OrderSelection {
+  return {
+    windowId,
+    productId: NO_ORDER_PRODUCT_ID,
+    productName: "Ich möchte nichts bestellen",
+    category: NO_ORDER_CATEGORY,
+    unitPrice: 0,
+    quantity: 1,
+    installationFee: 0,
+    manipulationFee: 0,
+    totalPrice: 0,
+    isMountable: false,
+  };
+}
 
 function toOrderSelection(windowId: string, product: MainProduct): OrderSelection {
   return {
@@ -142,6 +162,7 @@ function BestellungContent() {
   const [selections, setSelections] = useState<OrderSelection[]>([]);
   const [expandedWindows, setExpandedWindows] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [submittingNoOrder, setSubmittingNoOrder] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -216,6 +237,7 @@ function BestellungContent() {
   const handleToggleMain = useCallback(
     (windowId: string, product: MainProduct) => {
       if (!apartmentId || product.isIncludedRestoration) return;
+      setError(null);
       if (isSelected(windowId, product.id)) {
         removeSelection(windowId, product.id, apartmentId);
         // Wenn Motor abgewählt wird, auch alle Zubehör für dieses Fenster entfernen
@@ -251,6 +273,7 @@ function BestellungContent() {
             }
           }
         }
+        removeSelection(windowId, NO_ORDER_PRODUCT_ID, apartmentId);
         addSelection(toOrderSelection(windowId, product), apartmentId);
       }
       setSelections(getOrderState(apartmentId).selections);
@@ -261,6 +284,7 @@ function BestellungContent() {
   const handleToggleAccessory = useCallback(
     (windowId: string, accessory: Accessory) => {
       if (!apartmentId) return;
+      setError(null);
       if (isSelected(windowId, accessory.id)) {
         removeSelection(windowId, accessory.id, apartmentId);
       } else {
@@ -285,6 +309,53 @@ function BestellungContent() {
     [isSelected, apartmentId]
   );
 
+  const isNoOrderSelected = useCallback(
+    (windowId: string) => {
+      return selections.some(
+        (s) =>
+          s.windowId === windowId &&
+          (s.productId === NO_ORDER_PRODUCT_ID || isNoOrderCategory(s.category))
+      );
+    },
+    [selections]
+  );
+
+  const handleToggleNoOrder = useCallback(
+    (windowId: string) => {
+      if (!apartmentId) return;
+      setError(null);
+      const state = getOrderState(apartmentId);
+      const checked = state.selections.some(
+        (selection) =>
+          selection.windowId === windowId &&
+          (selection.productId === NO_ORDER_PRODUCT_ID ||
+            isNoOrderCategory(selection.category))
+      );
+
+      const nextSelections = checked
+        ? state.selections.filter(
+            (selection) =>
+              !(
+                selection.windowId === windowId &&
+                (selection.productId === NO_ORDER_PRODUCT_ID ||
+                  isNoOrderCategory(selection.category))
+              )
+          )
+        : [
+            ...state.selections.filter(
+              (selection) =>
+                selection.windowId !== windowId ||
+                selection.isIncludedRestoration
+            ),
+            toNoOrderSelection(windowId),
+          ];
+
+      setStoredSelections(apartmentId, nextSelections);
+      setSelections(nextSelections);
+    },
+    [apartmentId]
+  );
+
   const toggleExpand = (windowId: string) => {
     setExpandedWindows((prev) => {
       const next = new Set(prev);
@@ -297,9 +368,58 @@ function BestellungContent() {
     });
   };
 
+  const hasOnlyNoOrderSelections =
+    selections.length > 0 && selections.every((s) => isNoOrderCategory(s.category));
+
+  const handleSubmitNoOrder = async () => {
+    if (!apartmentId) {
+      setError("Keine Wohnung ausgewählt.");
+      return;
+    }
+    if (!hasOnlyNoOrderSelections) {
+      setError("Bitte prüfen Sie Ihre Auswahl.");
+      return;
+    }
+
+    setError(null);
+    setSubmittingNoOrder(true);
+
+    try {
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          apartmentId,
+          submitNoOrder: true,
+          items: selections.map((selection) => ({
+            windowId: selection.windowId,
+            productId: selection.productId,
+            quantity: selection.quantity ?? 1,
+          })),
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Rückmeldung konnte nicht abgeschickt werden");
+      }
+
+      const order = await res.json();
+      setStoredSelections(apartmentId, []);
+      router.push(`/bestellung/erfolg?orderId=${order.id}`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Ein Fehler ist aufgetreten");
+      setSubmittingNoOrder(false);
+    }
+  };
+
   const handleContinue = () => {
     if (selections.length === 0) {
       setError("Bitte wählen Sie mindestens ein Produkt aus.");
+      return;
+    }
+    if (hasOnlyNoOrderSelections) {
+      void handleSubmitNoOrder();
       return;
     }
     const hasMainProduct = selections.some((s) => {
@@ -390,6 +510,10 @@ function BestellungContent() {
         {windows.map((win) => {
           const motorSelected = isMotorSelected(win.id);
           const isExpanded = expandedWindows.has(win.id);
+          const noOrderSelected = isNoOrderSelected(win.id);
+          const hasIncludedRestoration = win.mainProducts.some(
+            (product) => product.isIncludedRestoration
+          );
 
           return (
             <Card key={win.id} className="card-elevated">
@@ -606,6 +730,31 @@ function BestellungContent() {
                           Wählen Sie &quot;Sonnenschutz mit Motor&quot; aus, um optionale Sender hinzuzufügen.
                         </p>
                       )}
+
+                    {!hasIncludedRestoration && (
+                      <div
+                        className={`rounded-lg border p-4 transition-colors ${
+                          noOrderSelected
+                            ? "border-accent bg-accent/5"
+                            : "border-border bg-card"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <Checkbox
+                            id={`${win.id}-no-order`}
+                            checked={noOrderSelected}
+                            onCheckedChange={() => handleToggleNoOrder(win.id)}
+                            className="size-5"
+                          />
+                          <Label
+                            htmlFor={`${win.id}-no-order`}
+                            className="cursor-pointer text-base font-medium"
+                          >
+                            Ich möchte nichts bestellen
+                          </Label>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               )}
@@ -619,7 +768,7 @@ function BestellungContent() {
         <CardContent className="flex flex-col gap-4 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-base text-muted-foreground">
-              {selections.length} Produkt{selections.length !== 1 ? "e" : ""} ausgewählt
+              {selections.length} Position{selections.length !== 1 ? "en" : ""} ausgewählt
             </p>
             <p className="text-2xl font-bold text-primary">
               {breakdown.totalNet.toFixed(2).replace(".", ",")} €{" "}
@@ -655,9 +804,19 @@ function BestellungContent() {
               size="lg"
               className="btn-lg gap-2 bg-accent hover:bg-accent/90"
               onClick={handleContinue}
+              disabled={submittingNoOrder}
             >
-              Weiter zur Zusammenfassung
-              <ArrowRight className="size-5" />
+              {hasOnlyNoOrderSelections ? (
+                <>
+                  {submittingNoOrder ? "Wird abgeschickt..." : "Abschicken"}
+                  <Send className="size-5" />
+                </>
+              ) : (
+                <>
+                  Weiter zur Zusammenfassung
+                  <ArrowRight className="size-5" />
+                </>
+              )}
             </Button>
           </div>
         </CardContent>

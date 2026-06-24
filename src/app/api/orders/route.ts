@@ -7,8 +7,11 @@ import {
   getSunscreenQuantity,
   isIncludedExistingSunscreen,
   isMountableCategory,
+  isNoOrderCategory,
   isNonOrderableWindowType,
   isSunscreenCategory,
+  NO_ORDER_CATEGORY,
+  NO_ORDER_PRODUCT_ID,
   VAT_RATE,
 } from "@/lib/pricing";
 import { NextResponse } from "next/server";
@@ -22,6 +25,27 @@ interface OrderItemInput {
   windowId: string;
   productId: string;
   quantity?: number;
+}
+
+async function ensureNoOrderProduct() {
+  return prisma.product.upsert({
+    where: { id: NO_ORDER_PRODUCT_ID },
+    update: {
+      name: "Ich möchte nichts bestellen",
+      description: "Rückmeldung ohne Produktbestellung",
+      category: NO_ORDER_CATEGORY,
+      unitPrice: 0,
+      isActive: true,
+    },
+    create: {
+      id: NO_ORDER_PRODUCT_ID,
+      name: "Ich möchte nichts bestellen",
+      description: "Rückmeldung ohne Produktbestellung",
+      category: NO_ORDER_CATEGORY,
+      unitPrice: 0,
+      isActive: true,
+    },
+  });
 }
 
 function isOwner(role: string): boolean {
@@ -138,7 +162,11 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { items, apartmentId } = body as { items: OrderItemInput[]; apartmentId: string };
+    const { items, apartmentId, submitNoOrder } = body as {
+      items: OrderItemInput[];
+      apartmentId: string;
+      submitNoOrder?: boolean;
+    };
 
     if (!apartmentId || !session.user.apartmentIds.includes(apartmentId)) {
       return NextResponse.json(
@@ -162,6 +190,21 @@ export async function POST(req: Request) {
     const normalizedItems: OrderItemInput[] = items.filter(
       (item) => item.productId !== "RECEIVER"
     );
+    const userSubmittedOnlyNoOrder =
+      normalizedItems.length > 0 &&
+      normalizedItems.every((item) => item.productId === NO_ORDER_PRODUCT_ID);
+
+    if (submitNoOrder && !userSubmittedOnlyNoOrder) {
+      return NextResponse.json(
+        { error: "Direktes Abschicken ist nur für 'nichts bestellen' möglich" },
+        { status: 400 }
+      );
+    }
+
+    if (normalizedItems.some((item) => item.productId === NO_ORDER_PRODUCT_ID)) {
+      await ensureNoOrderProduct();
+    }
+
     const selectedKeys = new Set(
       normalizedItems.map((item) => `${item.windowId}:${item.productId}`)
     );
@@ -206,6 +249,15 @@ export async function POST(req: Request) {
       selectedProductCategoriesByWindow.set(item.windowId, categories);
     }
 
+    for (const [windowId, categories] of selectedProductCategoriesByWindow.entries()) {
+      if (categories.has(NO_ORDER_CATEGORY) && categories.size > 1) {
+        const window = apartmentWindows.find((w) => w.id === windowId);
+        throw new Error(
+          `Fenster ${window?.windowNumber ?? windowId}: 'Nichts bestellen' kann nicht mit Produkten kombiniert werden`
+        );
+      }
+    }
+
     // Alles in einer Transaktion: Entwurf löschen + neu erstellen
     const order = await prisma.$transaction(async (tx) => {
       // Bestehenden Entwurf für diese Wohnung löschen
@@ -227,8 +279,23 @@ export async function POST(req: Request) {
         if (!product) {
           throw new Error(`Produkt ${item.productId} nicht gefunden`);
         }
-        if (isNonOrderableWindowType(window)) {
+        if (isNonOrderableWindowType(window) && !isNoOrderCategory(product.category)) {
           throw new Error(`Fenster ${window.windowNumber} ist Typ 7 und nicht bestellbar`);
+        }
+
+        if (isNoOrderCategory(product.category)) {
+          return {
+            windowId: item.windowId,
+            productId: item.productId,
+            quantity: 1,
+            unitPrice: 0,
+            totalPrice: 0,
+            installationFee: 0,
+            manipulationFee: 0,
+            isMountable: false,
+            isComplete: false,
+            isIncludedRestoration: false,
+          };
         }
 
         // Verfügbarkeitsprüfung: Produkt muss für dieses Fenster verfügbar sein
@@ -324,12 +391,17 @@ export async function POST(req: Request) {
         data: {
           residentId: session.user.id,
           apartmentId,
-          status: "DRAFT",
+          status: submitNoOrder && userSubmittedOnlyNoOrder ? "CONFIRMED" : "DRAFT",
           materialTotal,
           installationTotal,
           manipulationTotal,
           totalNet,
           totalGross,
+          confirmedAt: submitNoOrder && userSubmittedOnlyNoOrder ? new Date() : null,
+          confirmationName:
+            submitNoOrder && userSubmittedOnlyNoOrder
+              ? session.user.name || session.user.email || "Keine Bestellung"
+              : null,
           items: {
             create: orderItemsData,
           },

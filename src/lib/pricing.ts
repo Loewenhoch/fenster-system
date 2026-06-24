@@ -1,6 +1,8 @@
 export const INSTALLATION_FEE = 120;
 export const MANIPULATION_FEE = 150;
 export const VAT_RATE = 0.1;
+export const NO_ORDER_PRODUCT_ID = "NO_ORDER";
+export const NO_ORDER_CATEGORY = "NO_ORDER";
 
 export const SUNSCREEN_CATEGORIES = new Set([
   "SUNSCREEN_MOTOR",
@@ -39,6 +41,10 @@ export function isSunscreenCategory(category: string): boolean {
 
 export function isMountableCategory(category: string): boolean {
   return MOUNTABLE_CATEGORIES.has(category);
+}
+
+export function isNoOrderCategory(category?: string | null): boolean {
+  return category === NO_ORDER_CATEGORY;
 }
 
 export function getWindowTypeLabel(window: Pick<PricingWindow, "rekordTypeNew">): string | null {
