@@ -570,6 +570,33 @@ function BestellungContent() {
                 </div>
               </CardHeader>
 
+              {!isExpanded && !hasIncludedRestoration && (
+                <CardContent className="pt-0">
+                  <div
+                    className={`rounded-lg border p-4 transition-colors ${
+                      noOrderSelected
+                        ? "border-accent bg-accent/5"
+                        : "border-border bg-card"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Checkbox
+                        id={`${win.id}-no-order-collapsed`}
+                        checked={noOrderSelected}
+                        onCheckedChange={() => handleToggleNoOrder(win.id)}
+                        className="size-5"
+                      />
+                      <Label
+                        htmlFor={`${win.id}-no-order-collapsed`}
+                        className="cursor-pointer text-base font-medium"
+                      >
+                        Ich möchte nichts bestellen
+                      </Label>
+                    </div>
+                  </div>
+                </CardContent>
+              )}
+
               {isExpanded && (
                 <CardContent>
                   <div className="space-y-4">
