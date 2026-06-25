@@ -386,8 +386,15 @@ function BestellungContent() {
     userSelectableSelections.every((s) => isNoOrderCategory(s.category));
 
   const handleToggleAllNoOrder = () => {
-    if (!apartmentId || !canSubmitNoOrder) return;
+    if (!apartmentId) return;
     setError(null);
+
+    if (!canSubmitNoOrder) {
+      setError(
+        "Für diese Wohnung sind alle Fenster bereits durch eine fixe kostenlose Wiederherstellung abgedeckt."
+      );
+      return;
+    }
 
     const includedSelections = selections.filter(
       (selection) => selection.isIncludedRestoration
@@ -517,14 +524,12 @@ function BestellungContent() {
         <CardContent className="flex flex-col gap-4 py-4 sm:flex-row sm:items-center sm:justify-between">
           <button
             type="button"
-            className="flex flex-1 items-start gap-3 rounded-lg text-left outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex flex-1 cursor-pointer items-start gap-3 rounded-lg text-left outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/50"
             onClick={handleToggleAllNoOrder}
-            disabled={!canSubmitNoOrder}
           >
             <Checkbox
               id="all-no-order"
               checked={allNoOrderSelected}
-              disabled={!canSubmitNoOrder}
               className="mt-1 size-5 pointer-events-none"
             />
             <div>
@@ -549,7 +554,6 @@ function BestellungContent() {
               variant={allNoOrderSelected ? "secondary" : "outline"}
               className="gap-2"
               onClick={handleToggleAllNoOrder}
-              disabled={!canSubmitNoOrder}
             >
               {allNoOrderSelected ? "Auswahl entfernen" : "Auswählen"}
             </Button>
