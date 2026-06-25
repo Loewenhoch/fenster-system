@@ -374,8 +374,9 @@ function BestellungContent() {
   const selectedNoOrderCount = selections.filter((selection) =>
     isNoOrderCategory(selection.category)
   ).length;
+  const canSubmitNoOrder = windowsWithoutIncludedRestoration.length > 0;
   const allNoOrderSelected =
-    windowsWithoutIncludedRestoration.length > 0 &&
+    canSubmitNoOrder &&
     windowsWithoutIncludedRestoration.every((win) => isNoOrderSelected(win.id));
   const userSelectableSelections = selections.filter(
     (selection) => !selection.isIncludedRestoration
@@ -385,7 +386,7 @@ function BestellungContent() {
     userSelectableSelections.every((s) => isNoOrderCategory(s.category));
 
   const handleToggleAllNoOrder = () => {
-    if (!apartmentId) return;
+    if (!apartmentId || !canSubmitNoOrder) return;
     setError(null);
 
     const includedSelections = selections.filter(
@@ -514,23 +515,26 @@ function BestellungContent() {
         }`}
       >
         <CardContent className="flex flex-col gap-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-start gap-3">
+          <button
+            type="button"
+            className="flex flex-1 items-start gap-3 rounded-lg text-left outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-60"
+            onClick={handleToggleAllNoOrder}
+            disabled={!canSubmitNoOrder}
+          >
             <Checkbox
               id="all-no-order"
               checked={allNoOrderSelected}
-              onCheckedChange={handleToggleAllNoOrder}
-              className="mt-1 size-5"
+              disabled={!canSubmitNoOrder}
+              className="mt-1 size-5 pointer-events-none"
             />
             <div>
-              <Label
-                htmlFor="all-no-order"
-                className="cursor-pointer text-lg font-semibold text-primary"
-              >
+              <span className="text-lg font-semibold text-primary">
                 Ich möchte nichts bestellen
-              </Label>
+              </span>
               <p className="mt-1 text-sm text-muted-foreground">
-                Markiert alle Fenster ohne fixe kostenlose Wiederherstellung als
-                Rückmeldung ohne Produktbestellung.
+                {canSubmitNoOrder
+                  ? "Markiert alle Fenster ohne fixe kostenlose Wiederherstellung als Rückmeldung ohne Produktbestellung."
+                  : "Für diese Wohnung gibt es keine Fenster, die als „nichts bestellen“ markiert werden können."}
               </p>
               {selectedNoOrderCount > 0 && (
                 <p className="mt-1 text-sm font-medium text-accent">
@@ -538,16 +542,27 @@ function BestellungContent() {
                 </p>
               )}
             </div>
+          </button>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Button
+              type="button"
+              variant={allNoOrderSelected ? "secondary" : "outline"}
+              className="gap-2"
+              onClick={handleToggleAllNoOrder}
+              disabled={!canSubmitNoOrder}
+            >
+              {allNoOrderSelected ? "Auswahl entfernen" : "Auswählen"}
+            </Button>
+            <Button
+              type="button"
+              className="gap-2 bg-accent hover:bg-accent/90"
+              onClick={handleSubmitNoOrder}
+              disabled={!hasOnlyNoOrderSelections || submittingNoOrder}
+            >
+              {submittingNoOrder ? "Wird abgeschickt..." : "Abschicken"}
+              <Send className="size-4" />
+            </Button>
           </div>
-          <Button
-            type="button"
-            className="gap-2 bg-accent hover:bg-accent/90"
-            onClick={handleSubmitNoOrder}
-            disabled={!hasOnlyNoOrderSelections || submittingNoOrder}
-          >
-            {submittingNoOrder ? "Wird abgeschickt..." : "Abschicken"}
-            <Send className="size-4" />
-          </Button>
         </CardContent>
       </Card>
 
