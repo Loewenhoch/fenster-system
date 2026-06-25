@@ -368,8 +368,45 @@ function BestellungContent() {
     });
   };
 
+  const windowsWithoutIncludedRestoration = windows.filter(
+    (win) => !win.mainProducts.some((product) => product.isIncludedRestoration)
+  );
+  const selectedNoOrderCount = selections.filter((selection) =>
+    isNoOrderCategory(selection.category)
+  ).length;
+  const allNoOrderSelected =
+    windowsWithoutIncludedRestoration.length > 0 &&
+    windowsWithoutIncludedRestoration.every((win) => isNoOrderSelected(win.id));
+  const userSelectableSelections = selections.filter(
+    (selection) => !selection.isIncludedRestoration
+  );
   const hasOnlyNoOrderSelections =
-    selections.length > 0 && selections.every((s) => isNoOrderCategory(s.category));
+    userSelectableSelections.length > 0 &&
+    userSelectableSelections.every((s) => isNoOrderCategory(s.category));
+
+  const handleToggleAllNoOrder = () => {
+    if (!apartmentId) return;
+    setError(null);
+
+    const includedSelections = selections.filter(
+      (selection) => selection.isIncludedRestoration
+    );
+
+    if (allNoOrderSelected) {
+      setStoredSelections(apartmentId, includedSelections);
+      setSelections(includedSelections);
+      return;
+    }
+
+    const nextSelections = [
+      ...includedSelections,
+      ...windowsWithoutIncludedRestoration.map((win) => toNoOrderSelection(win.id)),
+    ];
+
+    setStoredSelections(apartmentId, nextSelections);
+    setSelections(nextSelections);
+    setExpandedWindows(new Set());
+  };
 
   const handleSubmitNoOrder = async () => {
     if (!apartmentId) {
@@ -391,11 +428,13 @@ function BestellungContent() {
         body: JSON.stringify({
           apartmentId,
           submitNoOrder: true,
-          items: selections.map((selection) => ({
-            windowId: selection.windowId,
-            productId: selection.productId,
-            quantity: selection.quantity ?? 1,
-          })),
+          items: selections
+            .filter((selection) => isNoOrderCategory(selection.category))
+            .map((selection) => ({
+              windowId: selection.windowId,
+              productId: selection.productId,
+              quantity: selection.quantity ?? 1,
+            })),
         }),
       });
 
@@ -468,6 +507,49 @@ function BestellungContent() {
           Wählen Sie für jedes Fenster die gewünschten Sonnenschutz-Produkte aus.
         </p>
       </div>
+
+      <Card
+        className={`border-2 ${
+          allNoOrderSelected ? "border-accent bg-accent/5" : "border-border"
+        }`}
+      >
+        <CardContent className="flex flex-col gap-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <Checkbox
+              id="all-no-order"
+              checked={allNoOrderSelected}
+              onCheckedChange={handleToggleAllNoOrder}
+              className="mt-1 size-5"
+            />
+            <div>
+              <Label
+                htmlFor="all-no-order"
+                className="cursor-pointer text-lg font-semibold text-primary"
+              >
+                Ich möchte nichts bestellen
+              </Label>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Markiert alle Fenster ohne fixe kostenlose Wiederherstellung als
+                Rückmeldung ohne Produktbestellung.
+              </p>
+              {selectedNoOrderCount > 0 && (
+                <p className="mt-1 text-sm font-medium text-accent">
+                  {selectedNoOrderCount} Fenster als „nichts bestellen“ markiert.
+                </p>
+              )}
+            </div>
+          </div>
+          <Button
+            type="button"
+            className="gap-2 bg-accent hover:bg-accent/90"
+            onClick={handleSubmitNoOrder}
+            disabled={!hasOnlyNoOrderSelections || submittingNoOrder}
+          >
+            {submittingNoOrder ? "Wird abgeschickt..." : "Abschicken"}
+            <Send className="size-4" />
+          </Button>
+        </CardContent>
+      </Card>
 
       {apartments.length > 1 && (
         <div className="flex flex-wrap gap-2">
