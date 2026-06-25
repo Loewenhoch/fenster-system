@@ -32,6 +32,13 @@ export async function POST(
       );
     }
 
+    if (!privacyAccepted || !termsAccepted || !withdrawalAccepted) {
+      return NextResponse.json(
+        { error: "Alle Bestätigungen müssen akzeptiert werden" },
+        { status: 400 }
+      );
+    }
+
     const order = await prisma.order.findFirst({
       where: { id, residentId: session.user.id },
     });
@@ -50,6 +57,13 @@ export async function POST(
       );
     }
 
+    if (order.status !== "DRAFT") {
+      return NextResponse.json(
+        { error: "Nur Entwürfe können bestätigt werden" },
+        { status: 400 }
+      );
+    }
+
     const headers = new Headers(req.headers);
     const ip = headers.get("x-forwarded-for") || headers.get("x-real-ip") || "unknown";
 
@@ -61,9 +75,9 @@ export async function POST(
         confirmationSignature: confirmationSignature || null,
         confirmationIp: ip,
         confirmedAt: new Date(),
-        privacyAccepted: !!privacyAccepted,
-        termsAccepted: !!termsAccepted,
-        withdrawalAccepted: !!withdrawalAccepted,
+        privacyAccepted: true,
+        termsAccepted: true,
+        withdrawalAccepted: true,
       },
       include: {
         items: { include: { product: true, window: true } },

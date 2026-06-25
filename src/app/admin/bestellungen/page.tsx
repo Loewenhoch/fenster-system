@@ -186,7 +186,7 @@ export default function AdminBestellungenPage() {
       }
     >();
 
-    for (const order of filtered) {
+    for (const order of filtered.filter((item) => item.status === "CONFIRMED")) {
       for (const item of order.typeSummary) {
         const key = `${item.windowTypeLabel}|${item.category}|${item.productName}`;
         const current =
@@ -212,7 +212,9 @@ export default function AdminBestellungenPage() {
   }, [filtered]);
 
   const confirmedCount = filtered.filter((order) => order.status === "CONFIRMED").length;
-  const filteredGrossTotal = filtered.reduce(
+  const filteredGrossTotal = filtered
+    .filter((order) => order.status === "CONFIRMED")
+    .reduce(
     (sum, order) => sum + order.totalGross,
     0
   );

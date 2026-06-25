@@ -93,6 +93,9 @@ export default function LoginPage() {
 
             <div className="text-center text-sm text-gray-500">
               <p>Bei Problemen wenden Sie sich bitte an die Hausverwaltung.</p>
+              <p className="mt-1 font-medium text-gray-600">ZT Platzer GmbH</p>
+              <p>Telefon: 0732 7810220</p>
+              <p>E-Mail: zt@platzer.co.at</p>
             </div>
           </form>
         </CardContent>

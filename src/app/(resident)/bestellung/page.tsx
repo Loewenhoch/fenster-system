@@ -889,7 +889,7 @@ function BestellungContent() {
       </div>
 
       {/* Subtotal & Actions */}
-      <Card className="sticky bottom-20 z-20 border-2 border-accent shadow-lg lg:static lg:border lg:shadow-sm">
+      <Card className="border-2 border-accent shadow-lg sm:sticky sm:bottom-20 sm:z-20 lg:static lg:border lg:shadow-sm">
         <CardContent className="flex flex-col gap-4 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-base text-muted-foreground">
@@ -918,16 +918,16 @@ function BestellungContent() {
               </div>
             )}
           </div>
-          <div className="flex gap-3">
-            <Link href="/dashboard">
-              <Button variant="outline" size="lg" className="btn-lg gap-2">
+          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+            <Link href="/dashboard" className="w-full sm:w-auto">
+              <Button variant="outline" size="lg" className="btn-lg w-full gap-2 sm:w-auto">
                 <ArrowLeft className="size-5" />
                 Zurück
               </Button>
             </Link>
             <Button
               size="lg"
-              className="btn-lg gap-2 bg-accent hover:bg-accent/90"
+              className="btn-lg w-full gap-2 bg-accent hover:bg-accent/90 sm:w-auto"
               onClick={handleContinue}
               disabled={submittingNoOrder}
             >

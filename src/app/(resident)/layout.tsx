@@ -24,7 +24,7 @@ export default async function ResidentLayout({
       <Header showNav />
       <div className="flex flex-1">
         <Navigation variant="resident" />
-        <main className="flex-1 pb-24 lg:pb-8">
+        <main className="min-w-0 flex-1 pb-24 lg:pb-8">
           <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
             {children}
           </div>
