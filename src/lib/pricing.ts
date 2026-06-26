@@ -87,6 +87,29 @@ export function getSunscreenQuantity(
   return 1;
 }
 
+export function getInsectScreenQuantity(
+  window: Pick<PricingWindow, "rekordTypeNew">,
+  category: string
+): number {
+  if (category !== "INSECT_SCREEN") return 1;
+
+  const type = window.rekordTypeNew ?? "";
+  if (/\b14\s*\+\s*14\b/.test(type)) return 2;
+
+  return 1;
+}
+
+export function getProductQuantity(
+  window: PricingWindow,
+  category: string
+): number {
+  if (category === "INSECT_SCREEN") {
+    return getInsectScreenQuantity(window, category);
+  }
+
+  return getSunscreenQuantity(window, category);
+}
+
 export function getIncludedReceiverUnitPrice(
   window: PricingWindow,
   fallbackUnitPrice?: number | null

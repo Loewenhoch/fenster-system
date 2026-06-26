@@ -5,6 +5,7 @@ import {
   getInsectScreenUnitPrice,
   getIncludedReceiverUnitPrice,
   getMountingFees,
+  getProductQuantity,
   getSunscreenQuantity,
   getWindowTypeLabel,
   hasCombinedInsectScreen,
@@ -253,7 +254,7 @@ export async function GET(request: Request) {
           const p = productMap.get("INSECT_SCREEN");
           if (p) {
             const unitPrice = isgPrice;
-            const quantity = 1;
+            const quantity = getProductQuantity(window, p.category);
             const materialTotal = unitPrice * quantity;
             const { installationFee, manipulationFee } =
               getMountingFees(window);

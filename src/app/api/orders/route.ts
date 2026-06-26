@@ -5,7 +5,7 @@ import {
   getInsectScreenUnitPrice,
   getIncludedReceiverUnitPrice,
   getMountingFees,
-  getSunscreenQuantity,
+  getProductQuantity,
   isIncludedExistingSunscreen,
   isMountableCategory,
   isNoOrderCategory,
@@ -337,7 +337,7 @@ export async function POST(req: Request) {
         if (unitPrice <= 0 && !isIncludedRestoration) {
           throw new Error(`Produkt ${product.name} nicht für Fenster ${window.windowNumber} verfügbar`);
         }
-        const quantity = getSunscreenQuantity(window, product.category);
+        const quantity = getProductQuantity(window, product.category);
         const materialLineTotal = unitPrice * quantity;
 
         materialTotal += materialLineTotal;
