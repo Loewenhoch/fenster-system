@@ -18,6 +18,11 @@ export const MOUNTABLE_CATEGORIES = new Set([
 export interface PricingWindow {
   widthMm?: number | null;
   rekordTypeNew?: string | null;
+  priceMotorComplete?: number | null;
+  priceCordComplete?: number | null;
+  priceCordMaterial?: number | null;
+  priceMotorMaterial?: number | null;
+  priceMotorSurcharge?: number | null;
   priceReceiver?: number | null;
   priceIsgWindow?: number | null;
   priceIsgDoor?: number | null;
@@ -119,6 +124,37 @@ export function getIncludedReceiverUnitPrice(
 
 function positiveOrZero(value?: number | null): number {
   return value && value > 0 ? value : 0;
+}
+
+function roundCurrency(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+export function getMotorUpgradeUnitPrice(
+  window: PricingWindow,
+  includedReceiverFallbackUnitPrice?: number | null
+): number {
+  if (getExistingSunscreenCategory(window) !== "SUNSCREEN_CORD") return 0;
+
+  const explicitSurcharge = positiveOrZero(window.priceMotorSurcharge);
+  if (explicitSurcharge > 0) return explicitSurcharge;
+
+  const motorBase =
+    positiveOrZero(window.priceMotorMaterial) ||
+    positiveOrZero(window.priceMotorComplete);
+  if (motorBase <= 0) return 0;
+
+  const cordBase =
+    positiveOrZero(window.priceCordMaterial) ||
+    positiveOrZero(window.priceCordComplete);
+  if (cordBase <= 0) return 0;
+
+  const receiverPrice = getIncludedReceiverUnitPrice(
+    window,
+    includedReceiverFallbackUnitPrice
+  );
+
+  return Math.max(0, roundCurrency(motorBase + receiverPrice - cordBase));
 }
 
 export function getInsectScreenUnitPrice(

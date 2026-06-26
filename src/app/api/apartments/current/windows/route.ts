@@ -5,6 +5,7 @@ import {
   getInsectScreenUnitPrice,
   getIncludedReceiverUnitPrice,
   getMountingFees,
+  getMotorUpgradeUnitPrice,
   getProductQuantity,
   getSunscreenQuantity,
   getWindowTypeLabel,
@@ -177,6 +178,10 @@ export async function GET(request: Request) {
           window,
           receiverProduct?.unitPrice
         );
+        const motorUpgradeUnitPrice = getMotorUpgradeUnitPrice(
+          window,
+          receiverProduct?.unitPrice
+        );
 
         // 1. Behang mit Gurt
         if (
@@ -217,13 +222,19 @@ export async function GET(request: Request) {
           !isTypeBlocked &&
           window.isMotorPossible &&
           (motorPrice || existingSunscreenCategory === "SUNSCREEN_MOTOR") &&
-          (!existingSunscreenCategory || existingSunscreenCategory === "SUNSCREEN_MOTOR")
+          (
+            !existingSunscreenCategory ||
+            existingSunscreenCategory === "SUNSCREEN_MOTOR" ||
+            motorUpgradeUnitPrice > 0
+          )
         ) {
           const p = productMap.get("SUNSCREEN_MOTOR");
           if (p) {
             const isIncludedRestoration = existingSunscreenCategory === p.category;
             const unitPrice = isIncludedRestoration
               ? 0
+              : motorUpgradeUnitPrice > 0
+              ? motorUpgradeUnitPrice
               : (motorPrice?.unitPrice ?? 0) + includedReceiverUnitPrice;
             const quantity = getSunscreenQuantity(window, p.category);
             const materialTotal = unitPrice * quantity;
@@ -234,12 +245,17 @@ export async function GET(request: Request) {
               name: p.name,
               description: isIncludedRestoration
                 ? "Vorhandener Sonnenschutz wird kostenlos wieder montiert."
+                : motorUpgradeUnitPrice > 0
+                ? "Upgrade vom vorhandenen Gurt-Sonnenschutz auf Motor. Berechnet wird nur der Aufpreis."
                 : "Inklusive Funkempfänger. Sender können optional dazubestellt werden.",
               category: p.category,
               type: "MOTOR",
               unitPrice,
               quantity,
-              installationFee: isIncludedRestoration || motorPrice?.isComplete ? 0 : installationFee,
+              installationFee:
+                isIncludedRestoration || motorUpgradeUnitPrice > 0 || motorPrice?.isComplete
+                  ? 0
+                  : installationFee,
               manipulationFee: isIncludedRestoration ? 0 : manipulationFee,
               materialTotal,
               totalPrice: materialTotal,

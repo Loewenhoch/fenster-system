@@ -143,7 +143,7 @@ function normalizeSelectionsForIncludedRestoration(
     normalized = normalized.filter(
       (selection) =>
         selection.windowId !== win.id ||
-        !selection.category?.startsWith("SUNSCREEN_")
+        selection.category !== includedProduct.category
     );
     normalized.push(toOrderSelection(win.id, includedProduct));
   }
@@ -255,7 +255,11 @@ function BestellungContent() {
           const win = windows.find((w) => w.id === windowId);
           if (win) {
             const cordProduct = win.mainProducts.find((p) => p.type === "CORD");
-            if (cordProduct && isSelected(windowId, cordProduct.id)) {
+            if (
+              cordProduct &&
+              !cordProduct.isIncludedRestoration &&
+              isSelected(windowId, cordProduct.id)
+            ) {
               removeSelection(windowId, cordProduct.id, apartmentId);
             }
           }

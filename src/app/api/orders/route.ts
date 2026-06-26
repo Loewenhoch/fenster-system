@@ -5,6 +5,7 @@ import {
   getInsectScreenUnitPrice,
   getIncludedReceiverUnitPrice,
   getMountingFees,
+  getMotorUpgradeUnitPrice,
   getProductQuantity,
   isIncludedExistingSunscreen,
   isMountableCategory,
@@ -78,6 +79,13 @@ function getUnitPrice(
   }
 
   if (productCategory === "SUNSCREEN_MOTOR") {
+    const motorUpgradeUnitPrice = getMotorUpgradeUnitPrice(
+      window,
+      includedReceiverFallbackUnitPrice
+    );
+    if (motorUpgradeUnitPrice > 0) {
+      return { unitPrice: motorUpgradeUnitPrice, isComplete: false, isIncludedRestoration: false };
+    }
     const includedReceiverUnitPrice = getIncludedReceiverUnitPrice(
       window,
       includedReceiverFallbackUnitPrice
@@ -301,17 +309,29 @@ export async function POST(req: Request) {
 
         // Verfügbarkeitsprüfung: Produkt muss für dieses Fenster verfügbar sein
         const includedCategory = getExistingSunscreenCategory(window);
+        const motorUpgradeUnitPrice = getMotorUpgradeUnitPrice(
+          window,
+          productMap.get("RECEIVER")?.unitPrice
+        );
         if (
           includedCategory &&
           isSunscreenCategory(product.category) &&
-          product.category !== includedCategory
+          product.category !== includedCategory &&
+          !(includedCategory === "SUNSCREEN_CORD" && product.category === "SUNSCREEN_MOTOR" && motorUpgradeUnitPrice > 0)
         ) {
           throw new Error(`Fuer Fenster ${window.windowNumber} ist der vorhandene Sonnenschutz fix vorgegeben`);
         }
 
         const hasMotorPrice = (window.priceMotorMaterial && window.priceMotorMaterial > 0) || (window.priceMotorComplete && window.priceMotorComplete > 0);
         const hasCordPrice = (window.priceCordMaterial && window.priceCordMaterial > 0) || (window.priceCordComplete && window.priceCordComplete > 0);
-        if (product.category === "SUNSCREEN_MOTOR" && (!window.isMotorPossible || (!hasMotorPrice && includedCategory !== "SUNSCREEN_MOTOR"))) {
+        if (
+          product.category === "SUNSCREEN_MOTOR" &&
+          (
+            !window.isMotorPossible ||
+            (!hasMotorPrice && includedCategory !== "SUNSCREEN_MOTOR") ||
+            (includedCategory === "SUNSCREEN_CORD" && motorUpgradeUnitPrice <= 0)
+          )
+        ) {
           throw new Error(`Produkt ${product.name} nicht fuer Fenster ${window.windowNumber} verfuegbar`);
         }
         if (product.category === "SUNSCREEN_CORD" && (!window.isCordPossible || (!hasCordPrice && includedCategory !== "SUNSCREEN_CORD"))) {
