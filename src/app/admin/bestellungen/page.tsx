@@ -535,7 +535,11 @@ export default function AdminBestellungenPage() {
                                           )}
                                         </td>
                                         <td className="px-3 py-2 text-right font-medium">
-                                          {formatPrice(item.totalPrice)}
+                                          {formatPrice(
+                                            item.totalPrice +
+                                              item.installationFee +
+                                              item.manipulationFee
+                                          )}
                                         </td>
                                       </tr>
                                     ))}

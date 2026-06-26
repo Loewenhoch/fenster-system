@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment, @typescript-eslint/no-explicit-any */
 // @ts-nocheck
 // PDF-Generation wird serverseitig mit @react-pdf/renderer durchgeführt
 // Diese Datei wird dynamisch importiert, um TypeScript-Probleme zu vermeiden
@@ -29,6 +30,12 @@ const styles = StyleSheet.create({
 
 export function createOrderPDF({ order, resident, apartment, building, items }: any): any {
   const fullName = `${resident.salutation || ""} ${resident.title || ""} ${resident.firstName || ""} ${resident.lastName || ""}`.trim();
+  const mountingItems = items
+    .map((item: any) => ({
+      ...item,
+      mountingTotal: (item.installationFee || 0) + (item.manipulationFee || 0),
+    }))
+    .filter((item: any) => item.mountingTotal > 0);
 
   const doc = (
     // @ts-ignore
@@ -69,6 +76,15 @@ export function createOrderPDF({ order, resident, apartment, building, items }: 
                 <Text style={styles.tableCell}>{item.quantity}</Text>
                 <Text style={styles.tableCell}>{item.unitPrice.toFixed(2)} €</Text>
                 <Text style={styles.tableCell}>{item.totalPrice.toFixed(2)} €</Text>
+              </View>
+            ))}
+            {mountingItems.map((item: any, idx: number) => (
+              <View key={`mounting-${idx}`} style={styles.tableRow}>
+                <Text style={styles.tableCellWide}>Montagegebühr</Text>
+                <Text style={styles.tableCell}>{item.windowNumber || "—"}</Text>
+                <Text style={styles.tableCell}>1</Text>
+                <Text style={styles.tableCell}>{item.mountingTotal.toFixed(2)} €</Text>
+                <Text style={styles.tableCell}>{item.mountingTotal.toFixed(2)} €</Text>
               </View>
             ))}
           </View>

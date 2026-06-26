@@ -5,6 +5,7 @@ import {
   getInsectScreenUnitPrice,
   getIncludedReceiverUnitPrice,
   getMountingFees,
+  getMountingFeeQuantity,
   getMotorUpgradeUnitPrice,
   getProductQuantity,
   isIncludedExistingSunscreen,
@@ -304,6 +305,7 @@ export async function POST(req: Request) {
             isMountable: false,
             isComplete: false,
             isIncludedRestoration: false,
+            category: product.category,
           };
         }
 
@@ -373,26 +375,52 @@ export async function POST(req: Request) {
           isMountable: isMountableCategory(product.category),
           isComplete,
           isIncludedRestoration,
+          category: product.category,
         };
       });
 
-      const chargedWindowIds = new Set<string>();
-      for (const item of orderItemsWithMeta) {
-        if (!item.isMountable || chargedWindowIds.has(item.windowId)) continue;
+      const mountingByWindow = new Map<
+        string,
+        {
+          targetIndex: number;
+          installationFee: number;
+          manipulationFee: number;
+          quantity: number;
+        }
+      >();
+
+      orderItemsWithMeta.forEach((item, index) => {
+        if (!item.isMountable || item.isComplete || item.isIncludedRestoration) {
+          return;
+        }
 
         const window = windowMap.get(item.windowId);
-        if (!window) continue;
+        if (!window) return;
 
         const { installationFee, manipulationFee, mountingTotal } =
           getMountingFees(window);
+        if (mountingTotal <= 0) return;
 
-        // Komplettpreise sind bereits inkl. Installation
-        item.installationFee = item.isComplete || item.isIncludedRestoration ? 0 : installationFee;
-        item.manipulationFee = item.isIncludedRestoration ? 0 : manipulationFee;
-        item.totalPrice += item.isComplete || item.isIncludedRestoration ? 0 : mountingTotal;
-        installationTotal += item.isComplete || item.isIncludedRestoration ? 0 : installationFee;
-        manipulationTotal += item.isIncludedRestoration ? 0 : manipulationFee;
-        chargedWindowIds.add(item.windowId);
+        const quantity = getMountingFeeQuantity(window, item.category);
+        if (quantity <= 0) return;
+
+        const current = mountingByWindow.get(item.windowId);
+        if (!current || quantity > current.quantity) {
+          mountingByWindow.set(item.windowId, {
+            targetIndex: index,
+            installationFee,
+            manipulationFee,
+            quantity,
+          });
+        }
+      });
+
+      for (const fees of mountingByWindow.values()) {
+        const item = orderItemsWithMeta[fees.targetIndex];
+        item.installationFee = fees.installationFee * fees.quantity;
+        item.manipulationFee = fees.manipulationFee * fees.quantity;
+        installationTotal += item.installationFee;
+        manipulationTotal += item.manipulationFee;
       }
 
       const orderItemsData = orderItemsWithMeta.map((item) => ({

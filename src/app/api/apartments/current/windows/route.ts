@@ -5,6 +5,7 @@ import {
   getInsectScreenUnitPrice,
   getIncludedReceiverUnitPrice,
   getMountingFees,
+  getMountingFeeQuantity,
   getMotorUpgradeUnitPrice,
   getProductQuantity,
   getSunscreenQuantity,
@@ -23,6 +24,7 @@ interface MainProduct {
   type: "CORD" | "MOTOR" | "INSECT";
   unitPrice: number;
   quantity: number;
+  mountingFeeQuantity: number;
   installationFee: number;
   manipulationFee: number;
   materialTotal: number;
@@ -195,6 +197,7 @@ export async function GET(request: Request) {
             const isIncludedRestoration = existingSunscreenCategory === p.category;
             const unitPrice = isIncludedRestoration ? 0 : cordPrice?.unitPrice ?? 0;
             const quantity = getSunscreenQuantity(window, p.category);
+            const mountingFeeQuantity = getMountingFeeQuantity(window, p.category);
             const materialTotal = unitPrice * quantity;
             const { installationFee, manipulationFee } =
               getMountingFees(window);
@@ -208,8 +211,13 @@ export async function GET(request: Request) {
               type: "CORD",
               unitPrice,
               quantity,
-              installationFee: isIncludedRestoration || cordPrice?.isComplete ? 0 : installationFee,
-              manipulationFee: isIncludedRestoration ? 0 : manipulationFee,
+              mountingFeeQuantity,
+              installationFee:
+                isIncludedRestoration || cordPrice?.isComplete
+                  ? 0
+                  : installationFee * mountingFeeQuantity,
+              manipulationFee:
+                isIncludedRestoration ? 0 : manipulationFee * mountingFeeQuantity,
               materialTotal,
               totalPrice: materialTotal,
               isIncludedRestoration,
@@ -237,6 +245,7 @@ export async function GET(request: Request) {
               ? motorUpgradeUnitPrice
               : (motorPrice?.unitPrice ?? 0) + includedReceiverUnitPrice;
             const quantity = getSunscreenQuantity(window, p.category);
+            const mountingFeeQuantity = getMountingFeeQuantity(window, p.category);
             const materialTotal = unitPrice * quantity;
             const { installationFee, manipulationFee } =
               getMountingFees(window);
@@ -252,11 +261,13 @@ export async function GET(request: Request) {
               type: "MOTOR",
               unitPrice,
               quantity,
+              mountingFeeQuantity,
               installationFee:
                 isIncludedRestoration || motorUpgradeUnitPrice > 0 || motorPrice?.isComplete
                   ? 0
-                  : installationFee,
-              manipulationFee: isIncludedRestoration ? 0 : manipulationFee,
+                  : installationFee * mountingFeeQuantity,
+              manipulationFee:
+                isIncludedRestoration ? 0 : manipulationFee * mountingFeeQuantity,
               materialTotal,
               totalPrice: materialTotal,
               isIncludedRestoration,
@@ -271,6 +282,7 @@ export async function GET(request: Request) {
           if (p) {
             const unitPrice = isgPrice;
             const quantity = getProductQuantity(window, p.category);
+            const mountingFeeQuantity = getMountingFeeQuantity(window, p.category);
             const materialTotal = unitPrice * quantity;
             const { installationFee, manipulationFee } =
               getMountingFees(window);
@@ -286,8 +298,9 @@ export async function GET(request: Request) {
               type: "INSECT",
               unitPrice,
               quantity,
-              installationFee,
-              manipulationFee,
+              mountingFeeQuantity,
+              installationFee: installationFee * mountingFeeQuantity,
+              manipulationFee: manipulationFee * mountingFeeQuantity,
               materialTotal,
               totalPrice: materialTotal,
             });

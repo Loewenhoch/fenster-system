@@ -161,6 +161,21 @@ export default function BestellungBestaetigungPage() {
   }
 
   const vatAmount = order.totalGross - order.totalNet;
+  const mountingLines = Array.from(
+    order.items
+      .reduce((lineMap, item) => {
+        const amount = item.installationFee + item.manipulationFee;
+        if (amount <= 0) return lineMap;
+
+        const windowKey = `${item.window.windowNumber}-${item.window.location}`;
+        const current = lineMap.get(windowKey);
+        if (!current || amount > current.amount) {
+          lineMap.set(windowKey, { item, amount });
+        }
+        return lineMap;
+      }, new Map<string, { item: OrderData["items"][number]; amount: number }>())
+      .values()
+  );
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -221,19 +236,29 @@ export default function BestellungBestaetigungPage() {
                             .replace(".", ",")} €`
                         : `${item.unitPrice.toFixed(2).replace(".", ",")} €`}
                     </span>
-                    {item.installationFee + item.manipulationFee > 0 && (
-                      <span className="flex items-center gap-0.5">
-                        <Wrench className="size-3" />
-                        Montagegebühr:{" "}
-                        {(item.installationFee + item.manipulationFee)
-                          .toFixed(2)
-                          .replace(".", ",")} €
-                      </span>
-                    )}
                   </div>
                 </div>
                 <span className="text-lg font-bold text-primary">
                   {item.totalPrice.toFixed(2).replace(".", ",")} €
+                </span>
+              </div>
+            ))}
+            {mountingLines.map(({ item, amount }) => (
+              <div
+                key={`mounting-${item.window.windowNumber}-${item.window.location}`}
+                className="flex flex-col gap-1 bg-muted/30 py-3 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div>
+                  <p className="flex items-center gap-2 font-medium text-base">
+                    <Wrench className="size-5 text-accent" />
+                    Fenster {item.window.windowNumber} Montagegebühr
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {item.window.location}
+                  </p>
+                </div>
+                <span className="text-lg font-bold text-primary">
+                  {amount.toFixed(2).replace(".", ",")} €
                 </span>
               </div>
             ))}

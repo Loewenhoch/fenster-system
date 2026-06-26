@@ -52,6 +52,7 @@ interface MainProduct {
   type: "CORD" | "MOTOR" | "INSECT";
   unitPrice: number;
   quantity: number;
+  mountingFeeQuantity: number;
   installationFee: number;
   manipulationFee: number;
   materialTotal: number;
@@ -120,6 +121,7 @@ function toOrderSelection(windowId: string, product: MainProduct): OrderSelectio
     category: product.category,
     unitPrice: product.unitPrice,
     quantity: product.quantity,
+    mountingFeeQuantity: product.mountingFeeQuantity,
     installationFee: product.installationFee,
     manipulationFee: product.manipulationFee,
     totalPrice: product.materialTotal,

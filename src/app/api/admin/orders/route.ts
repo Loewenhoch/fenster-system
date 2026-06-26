@@ -75,7 +75,8 @@ export async function GET() {
           unitPrice: item.unitPrice,
           installationFee: item.installationFee,
           manipulationFee: item.manipulationFee,
-          lineTotal: item.totalPrice,
+          lineTotal:
+            item.totalPrice + item.installationFee + item.manipulationFee,
         },
       }));
       const typeSummaryMap = new Map<

@@ -9,6 +9,7 @@ export interface OrderSelection {
   category?: string;
   unitPrice: number;
   quantity?: number;
+  mountingFeeQuantity?: number;
   installationFee: number;
   manipulationFee: number;
   totalPrice: number;
@@ -22,7 +23,7 @@ export interface OrderState {
 }
 
 const STORAGE_KEY = "sta-fenster-bestellung";
-const STATE_VERSION = 4;
+const STATE_VERSION = 5;
 
 interface StoredState extends OrderState {
   _version?: number;

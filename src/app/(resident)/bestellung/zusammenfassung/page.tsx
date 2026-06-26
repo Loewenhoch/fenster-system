@@ -159,7 +159,23 @@ function ZusammenfassungContent() {
   const breakdown = getPriceBreakdown();
   const vatAmount = breakdown.totalNet * VAT_RATE;
   const totalGross = breakdown.totalNet * (1 + VAT_RATE);
-  const displayedFeeWindowIds = new Set<string>();
+  const mountingLines = Array.from(
+    selections
+      .reduce((lineMap, selection) => {
+        const fee = selection.installationFee + selection.manipulationFee;
+        if (fee <= 0) return lineMap;
+
+        const current = lineMap.get(selection.windowId);
+        if (!current || fee > current.amount) {
+          lineMap.set(selection.windowId, {
+            windowId: selection.windowId,
+            amount: fee,
+          });
+        }
+        return lineMap;
+      }, new Map<string, { windowId: string; amount: number }>())
+      .values()
+  );
 
   if (loading) return <Loading fullScreen text="Zusammenfassung wird geladen..." />;
 
@@ -210,14 +226,6 @@ function ZusammenfassungContent() {
           <div className="divide-y divide-border">
             {selections.map((selection, index) => {
               const win = windows[selection.windowId];
-              const selectionMountingFee =
-                selection.installationFee + selection.manipulationFee;
-              const showMountingFee =
-                selectionMountingFee > 0 &&
-                !displayedFeeWindowIds.has(selection.windowId);
-              if (showMountingFee) {
-                displayedFeeWindowIds.add(selection.windowId);
-              }
               return (
                 <div
                   key={`${selection.windowId}-${selection.productId}-${index}`}
@@ -258,15 +266,6 @@ function ZusammenfassungContent() {
                               .replace(".", ",")} €`
                           : `${selection.unitPrice.toFixed(2).replace(".", ",")} €`}
                       </span>
-                      {showMountingFee && (
-                        <span className="flex items-center gap-0.5">
-                          <Wrench className="size-3" />
-                          Montagegebühr pro Fenster:{" "}
-                          {selectionMountingFee
-                            .toFixed(2)
-                            .replace(".", ",")} €
-                        </span>
-                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
@@ -287,6 +286,32 @@ function ZusammenfassungContent() {
                       <Trash2 className="size-5" />
                     </Button>
                   </div>
+                </div>
+              );
+            })}
+            {mountingLines.map((line) => {
+              const win = windows[line.windowId];
+              return (
+                <div
+                  key={`mounting-${line.windowId}`}
+                  className="flex flex-col gap-2 bg-muted/30 p-4 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 text-base font-medium">
+                      <Wrench className="size-5 text-accent shrink-0" />
+                      <span>
+                        Fenster {win?.windowNumber || line.windowId.slice(0, 6)} Montagegebühr
+                      </span>
+                    </div>
+                    <div className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
+                      <Home className="size-4" />
+                      {win?.location || "Fenster"}
+                      {win?.windowTypeLabel && ` · ${win.windowTypeLabel}`}
+                    </div>
+                  </div>
+                  <span className="text-lg font-bold text-primary">
+                    {line.amount.toFixed(2).replace(".", ",")} €
+                  </span>
                 </div>
               );
             })}

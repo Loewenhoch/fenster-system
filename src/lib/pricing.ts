@@ -36,6 +36,7 @@ export interface PriceSelection {
   category?: string;
   unitPrice: number;
   quantity?: number;
+  mountingFeeQuantity?: number;
   installationFee?: number;
   manipulationFee?: number;
   isMountable?: boolean;
@@ -98,8 +99,8 @@ export function getInsectScreenQuantity(
 ): number {
   if (category !== "INSECT_SCREEN") return 1;
 
-  const type = window.rekordTypeNew ?? "";
-  if (/\b14\s*\+\s*14\b/.test(type)) return 2;
+  const parts = getCombinedWindowTypeParts(window);
+  if (parts.length === 2 && parts[0] === parts[1]) return 2;
 
   return 1;
 }
@@ -113,6 +114,31 @@ export function getProductQuantity(
   }
 
   return getSunscreenQuantity(window, category);
+}
+
+export function getCombinedWindowTypeParts(
+  window: Pick<PricingWindow, "rekordTypeNew">
+): string[] {
+  return (window.rekordTypeNew ?? "")
+    .split("+")
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+export function getMountingFeeQuantity(
+  window: PricingWindow,
+  category: string
+): number {
+  if (!isMountableCategory(category)) return 0;
+
+  const productQuantity = getProductQuantity(window, category);
+  const combinedParts = getCombinedWindowTypeParts(window).length;
+
+  if (category === "INSECT_SCREEN") {
+    return Math.max(productQuantity, combinedParts || 1);
+  }
+
+  return productQuantity;
 }
 
 export function getIncludedReceiverUnitPrice(
