@@ -94,13 +94,10 @@ export function getSunscreenQuantity(
 }
 
 export function getInsectScreenQuantity(
-  window: Pick<PricingWindow, "rekordTypeNew">,
+  _window: Pick<PricingWindow, "rekordTypeNew">,
   category: string
 ): number {
   if (category !== "INSECT_SCREEN") return 1;
-
-  const parts = getCombinedWindowTypeParts(window);
-  if (parts.length === 2 && parts[0] === parts[1]) return 2;
 
   return 1;
 }
