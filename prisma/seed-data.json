@@ -14209,7 +14209,7 @@
       "location": "hof (B.Str)",
       "widthMm": 400,
       "heightMm": 1000,
-      "measureText": null,
+      "measureText": "400x1000",
       "hasExistingSunscreen": false,
       "hasElectricSunscreen": false,
       "sunscreenInterest": false,
