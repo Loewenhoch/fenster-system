@@ -21,6 +21,7 @@ import {
   ArrowLeft,
   CheckCircle,
   Wrench,
+  Printer,
 } from "lucide-react";
 import { VAT_RATE } from "@/lib/pricing";
 
@@ -180,7 +181,7 @@ export default function BestellungBestaetigungPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       {/* Progress */}
-      <div className="space-y-2">
+      <div className="space-y-2 print-hidden">
         <div className="flex items-center justify-between text-sm">
           <span className="font-medium text-primary">
             Schritt {STEP} von {TOTAL_STEPS}
@@ -195,7 +196,7 @@ export default function BestellungBestaetigungPage() {
         </div>
       </div>
 
-      <div>
+      <div className="print-hidden">
         <h1 className="text-2xl font-bold text-primary sm:text-3xl">
           Verbindliche Bestätigung
         </h1>
@@ -205,15 +206,28 @@ export default function BestellungBestaetigungPage() {
       </div>
 
       {/* Bestellübersicht */}
-      <Card className="card-elevated">
+      <Card className="card-elevated print-area">
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-xl">
-            <FileCheck className="size-6 text-accent" />
-            Bestellübersicht
-          </CardTitle>
-          <CardDescription>
-            {order.items.length} Position{order.items.length !== 1 ? "en" : ""}
-          </CardDescription>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <FileCheck className="size-6 text-accent" />
+                Bestellübersicht
+              </CardTitle>
+              <CardDescription>
+                {order.items.length} Position{order.items.length !== 1 ? "en" : ""}
+              </CardDescription>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              className="gap-2 print-hidden"
+              onClick={() => window.print()}
+            >
+              <Printer className="size-4" />
+              Drucken
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="divide-y divide-border">
@@ -298,7 +312,7 @@ export default function BestellungBestaetigungPage() {
       </Card>
 
       {/* Bestätigungsformular */}
-      <Card>
+      <Card className="print-hidden">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CheckCircle className="h-5 w-5 text-accent" />
