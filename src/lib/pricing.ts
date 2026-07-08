@@ -130,12 +130,7 @@ export function getMountingFeeQuantity(
 
   const productQuantity = getProductQuantity(window, category);
   const combinedParts = getCombinedWindowTypeParts(window).length;
-
-  if (category === "INSECT_SCREEN") {
-    return Math.max(productQuantity, combinedParts || 1);
-  }
-
-  return productQuantity;
+  return Math.max(productQuantity, combinedParts || 1);
 }
 
 export function getIncludedReceiverUnitPrice(

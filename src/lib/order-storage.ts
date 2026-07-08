@@ -23,7 +23,7 @@ export interface OrderState {
 }
 
 const STORAGE_KEY = "sta-fenster-bestellung";
-const STATE_VERSION = 5;
+const STATE_VERSION = 6;
 
 interface StoredState extends OrderState {
   _version?: number;
