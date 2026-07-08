@@ -85,6 +85,15 @@ function getLocationLabel(location: string) {
   return location;
 }
 
+function getPlanViewerHref(plan: { href: string; label: string }, backHref: string) {
+  const params = new URLSearchParams({
+    file: plan.href,
+    title: plan.label,
+    back: backHref,
+  });
+  return `/plan?${params.toString()}`;
+}
+
 export default async function FensterPage({
   searchParams,
 }: {
@@ -154,6 +163,7 @@ export default async function FensterPage({
     apartment.building.houseNumber,
     apartment.floor
   );
+  const currentFensterHref = `/fenster?apartmentId=${apartment.id}${filter ? `&filter=${filter}` : ""}`;
 
   return (
     <div className="space-y-6">
@@ -209,14 +219,15 @@ export default async function FensterPage({
               Grundrisse & Ansichten
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Oeffnen Sie den passenden Plan, um die Fensterposition im Grundriss nachzusehen.
+              Der Plan wird in einem neuen Tab geöffnet. Über den Button
+              „Zurück zu Meine Fenster“ kommen Sie dort wieder auf diese Seite.
             </p>
           </div>
           <div className="flex flex-wrap gap-2 sm:justify-end">
             {apartmentPlanLinks.map((plan) => (
               <a
                 key={plan.href}
-                href={plan.href}
+                href={getPlanViewerHref(plan, currentFensterHref)}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex min-h-[44px] items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
@@ -229,7 +240,7 @@ export default async function FensterPage({
             {BUILDING_VIEW_LINKS.map((plan) => (
               <a
                 key={plan.href}
-                href={plan.href}
+                href={getPlanViewerHref(plan, currentFensterHref)}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex min-h-[44px] items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
