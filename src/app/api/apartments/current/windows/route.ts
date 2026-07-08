@@ -212,10 +212,9 @@ export async function GET(request: Request) {
               unitPrice,
               quantity,
               mountingFeeQuantity,
-              installationFee:
-                isIncludedRestoration || cordPrice?.isComplete
-                  ? 0
-                  : installationFee * mountingFeeQuantity,
+              installationFee: isIncludedRestoration
+                ? 0
+                : installationFee * mountingFeeQuantity,
               manipulationFee:
                 isIncludedRestoration ? 0 : manipulationFee * mountingFeeQuantity,
               materialTotal,
@@ -262,10 +261,9 @@ export async function GET(request: Request) {
               unitPrice,
               quantity,
               mountingFeeQuantity,
-              installationFee:
-                isIncludedRestoration || motorUpgradeUnitPrice > 0 || motorPrice?.isComplete
-                  ? 0
-                  : installationFee * mountingFeeQuantity,
+              installationFee: isIncludedRestoration
+                ? 0
+                : installationFee * mountingFeeQuantity,
               manipulationFee:
                 isIncludedRestoration ? 0 : manipulationFee * mountingFeeQuantity,
               materialTotal,

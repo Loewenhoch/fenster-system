@@ -390,7 +390,7 @@ export async function POST(req: Request) {
       >();
 
       orderItemsWithMeta.forEach((item, index) => {
-        if (!item.isMountable || item.isComplete || item.isIncludedRestoration) {
+        if (!item.isMountable || item.isIncludedRestoration) {
           return;
         }
 
