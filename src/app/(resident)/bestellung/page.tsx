@@ -728,7 +728,7 @@ function BestellungContent() {
                                 key={product.id}
                                 className={`flex items-start gap-3 rounded-lg border p-4 transition-colors ${
                                   isLocked
-                                    ? "cursor-default border-green-200 bg-green-50"
+                                    ? "cursor-default border-success/40 bg-success/10 dark:border-success/45 dark:bg-success/20"
                                     : checked
                                     ? "cursor-pointer border-accent bg-accent/5"
                                     : "cursor-pointer border-border bg-card hover:bg-muted/50"
@@ -757,7 +757,7 @@ function BestellungContent() {
                                     )}
                                     <span className="truncate">{product.name}</span>
                                     {isLocked && (
-                                      <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+                                      <Badge className="bg-success/15 text-success hover:bg-success/15 dark:bg-success/25 dark:text-success">
                                         inklusive
                                       </Badge>
                                     )}
