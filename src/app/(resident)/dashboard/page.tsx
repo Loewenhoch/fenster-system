@@ -280,7 +280,7 @@ export default async function DashboardPage() {
               )}
             </div>
             {isConfirmed && latestOrder ? (
-              <Link href={`/bestellung?orderId=${latestOrder.id}`}>
+              <Link href={`/bestellung/bestaetigung?orderId=${latestOrder.id}`}>
                 <Button size="lg" className="btn-lg gap-2">
                   <Eye className="size-5" />
                   Bestellung ansehen
@@ -357,7 +357,7 @@ export default async function DashboardPage() {
         </Link>
 
         {isConfirmed && latestOrder ? (
-          <Link href={`/bestellung?orderId=${latestOrder.id}`}>
+          <Link href={`/bestellung/bestaetigung?orderId=${latestOrder.id}`}>
             <Button
               size="lg"
               className="btn-xl h-auto w-full flex-col gap-2 py-6 bg-accent hover:bg-accent/90"

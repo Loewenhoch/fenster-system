@@ -139,28 +139,7 @@ export default function BestellungBestaetigungPage() {
     );
   }
 
-  // Wenn die Order bereits bestätigt ist, Hinweis anzeigen statt Formular
-  if (order.status === "CONFIRMED") {
-    return (
-      <div className="max-w-2xl mx-auto space-y-6">
-        <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-base text-green-800">
-          <CheckCircle className="inline size-5 mr-2" />
-          Diese Bestellung wurde bereits verbindlich bestätigt.
-        </div>
-        <div className="space-y-2 text-sm text-muted-foreground">
-          <p>Bestellnummer: #{order.id.slice(0, 8)}</p>
-          <p>Gesamtsumme brutto: {order.totalGross.toFixed(2).replace(".", ",")} €</p>
-        </div>
-        <Link href="/dashboard">
-          <Button variant="outline" className="gap-2">
-            <ArrowLeft className="size-4" />
-            Zum Dashboard
-          </Button>
-        </Link>
-      </div>
-    );
-  }
-
+  const isConfirmed = order.status === "CONFIRMED";
   const vatAmount = order.totalGross - order.totalNet;
   const mountingLines = Array.from(
     order.items
@@ -180,28 +159,38 @@ export default function BestellungBestaetigungPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      {/* Progress */}
-      <div className="space-y-2 print-hidden">
-        <div className="flex items-center justify-between text-sm">
-          <span className="font-medium text-primary">
-            Schritt {STEP} von {TOTAL_STEPS}
-          </span>
-          <span className="text-muted-foreground">Bestätigung</span>
+      {!isConfirmed && (
+        <div className="space-y-2 print-hidden">
+          <div className="flex items-center justify-between text-sm">
+            <span className="font-medium text-primary">
+              Schritt {STEP} von {TOTAL_STEPS}
+            </span>
+            <span className="text-muted-foreground">Bestätigung</span>
+          </div>
+          <div className="h-3 w-full overflow-hidden rounded-full bg-secondary">
+            <div
+              className="h-full rounded-full bg-accent transition-all duration-300"
+              style={{ width: `${(STEP / TOTAL_STEPS) * 100}%` }}
+            />
+          </div>
         </div>
-        <div className="h-3 w-full overflow-hidden rounded-full bg-secondary">
-          <div
-            className="h-full rounded-full bg-accent transition-all duration-300"
-            style={{ width: `${(STEP / TOTAL_STEPS) * 100}%` }}
-          />
+      )}
+
+      {isConfirmed && (
+        <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-base text-green-800 print-hidden">
+          <CheckCircle className="inline size-5 mr-2" />
+          Diese Bestellung wurde bereits verbindlich bestätigt.
         </div>
-      </div>
+      )}
 
       <div className="print-hidden">
         <h1 className="text-2xl font-bold text-primary sm:text-3xl">
-          Verbindliche Bestätigung
+          {isConfirmed ? "Bestellung ansehen" : "Verbindliche Bestätigung"}
         </h1>
         <p className="mt-1 text-base text-muted-foreground">
-          Prüfen Sie Ihre Bestellung und bestätigen Sie diese verbindlich.
+          {isConfirmed
+            ? "Hier sehen Sie Ihre bereits abgeschlossene Bestellung."
+            : "Prüfen Sie Ihre Bestellung und bestätigen Sie diese verbindlich."}
         </p>
       </div>
 
@@ -215,7 +204,8 @@ export default function BestellungBestaetigungPage() {
                 Bestellübersicht
               </CardTitle>
               <CardDescription>
-                {order.items.length} Position{order.items.length !== 1 ? "en" : ""}
+                Bestellnummer #{order.id.slice(0, 8)} · {order.items.length} Position
+                {order.items.length !== 1 ? "en" : ""}
               </CardDescription>
             </div>
             <Button
@@ -311,102 +301,112 @@ export default function BestellungBestaetigungPage() {
         </CardContent>
       </Card>
 
-      {/* Bestätigungsformular */}
-      <Card className="print-hidden">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CheckCircle className="h-5 w-5 text-accent" />
-            Bestellung verbindlich abschließen
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {error && (
-            <div className="flex items-center gap-2 text-red-600 bg-red-50 p-3 rounded-lg text-sm">
-              <AlertCircle className="h-4 w-4" />
-              {error}
-            </div>
-          )}
-
-          <div className="space-y-4">
-            <div className="flex items-start gap-3">
-              <Checkbox
-                id="privacy"
-                checked={privacy}
-                onCheckedChange={(c) => setPrivacy(c as boolean)}
-              />
-              <Label htmlFor="privacy" className="text-sm leading-relaxed cursor-pointer">
-                Ich habe die{" "}
-                <a href="/datenschutz" target="_blank" className="text-accent underline">
-                  Datenschutzerklärung
-                </a>{" "}
-                gelesen und akzeptiere sie.
-              </Label>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <Checkbox
-                id="terms"
-                checked={terms}
-                onCheckedChange={(c) => setTerms(c as boolean)}
-              />
-              <Label htmlFor="terms" className="text-sm leading-relaxed cursor-pointer">
-                Ich habe die{" "}
-                <a href="/agb" target="_blank" className="text-accent underline">
-                  AGB
-                </a>{" "}
-                gelesen und akzeptiere sie.
-              </Label>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <Checkbox
-                id="withdrawal"
-                checked={withdrawal}
-                onCheckedChange={(c) => setWithdrawal(c as boolean)}
-              />
-              <Label
-                htmlFor="withdrawal"
-                className="text-sm leading-relaxed cursor-pointer"
-              >
-                Ich habe die{" "}
-                <a href="/widerruf" target="_blank" className="text-accent underline">
-                  Widerrufsbelehrung
-                </a>{" "}
-                zur Kenntnis genommen.
-              </Label>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="name">Vollständiger Name *</Label>
-            <Input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Max Mustermann"
-              className="h-12"
-            />
-          </div>
-
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <Link href={`/bestellung/zusammenfassung?apartmentId=${order.apartmentId}`} className="w-full sm:w-auto">
-              <Button variant="outline" className="w-full h-14 text-lg gap-2 sm:w-auto">
-                <ArrowLeft className="size-5" />
-                Zurück
-              </Button>
-            </Link>
-            <Button
-              onClick={handleSubmit}
-              disabled={confirming}
-              className="w-full h-14 text-lg bg-accent hover:bg-accent/90"
-            >
-              {confirming
-                ? "Wird verarbeitet..."
-                : "Bestellung verbindlich abschicken"}
+      {isConfirmed ? (
+        <div className="print-hidden">
+          <Link href="/dashboard">
+            <Button variant="outline" className="gap-2">
+              <ArrowLeft className="size-4" />
+              Zum Dashboard
             </Button>
-          </div>
-        </CardContent>
-      </Card>
+          </Link>
+        </div>
+      ) : (
+        <Card className="print-hidden">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-accent" />
+              Bestellung verbindlich abschließen
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {error && (
+              <div className="flex items-center gap-2 text-red-600 bg-red-50 p-3 rounded-lg text-sm">
+                <AlertCircle className="h-4 w-4" />
+                {error}
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id="privacy"
+                  checked={privacy}
+                  onCheckedChange={(c) => setPrivacy(c as boolean)}
+                />
+                <Label htmlFor="privacy" className="text-sm leading-relaxed cursor-pointer">
+                  Ich habe die{" "}
+                  <a href="/datenschutz" target="_blank" className="text-accent underline">
+                    Datenschutzerklärung
+                  </a>{" "}
+                  gelesen und akzeptiere sie.
+                </Label>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id="terms"
+                  checked={terms}
+                  onCheckedChange={(c) => setTerms(c as boolean)}
+                />
+                <Label htmlFor="terms" className="text-sm leading-relaxed cursor-pointer">
+                  Ich habe die{" "}
+                  <a href="/agb" target="_blank" className="text-accent underline">
+                    AGB
+                  </a>{" "}
+                  gelesen und akzeptiere sie.
+                </Label>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id="withdrawal"
+                  checked={withdrawal}
+                  onCheckedChange={(c) => setWithdrawal(c as boolean)}
+                />
+                <Label
+                  htmlFor="withdrawal"
+                  className="text-sm leading-relaxed cursor-pointer"
+                >
+                  Ich habe die{" "}
+                  <a href="/widerruf" target="_blank" className="text-accent underline">
+                    Widerrufsbelehrung
+                  </a>{" "}
+                  zur Kenntnis genommen.
+                </Label>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="name">Vollständiger Name *</Label>
+              <Input
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Max Mustermann"
+                className="h-12"
+              />
+            </div>
+
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Link href={`/bestellung/zusammenfassung?apartmentId=${order.apartmentId}`} className="w-full sm:w-auto">
+                <Button variant="outline" className="w-full h-14 text-lg gap-2 sm:w-auto">
+                  <ArrowLeft className="size-5" />
+                  Zurück
+                </Button>
+              </Link>
+              <Button
+                onClick={handleSubmit}
+                disabled={confirming}
+                className="w-full h-14 text-lg bg-accent hover:bg-accent/90"
+              >
+                {confirming
+                  ? "Wird verarbeitet..."
+                  : "Bestellung verbindlich abschicken"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
