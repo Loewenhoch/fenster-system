@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { repairDraftOrderTotals } from "@/lib/order-repair";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
@@ -63,6 +64,8 @@ export async function POST(
         { status: 400 }
       );
     }
+
+    await repairDraftOrderTotals(order.id);
 
     const headers = new Headers(req.headers);
     const ip = headers.get("x-forwarded-for") || headers.get("x-real-ip") || "unknown";

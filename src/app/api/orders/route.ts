@@ -17,6 +17,7 @@ import {
   NO_ORDER_PRODUCT_ID,
   VAT_RATE,
 } from "@/lib/pricing";
+import { repairDraftOrders } from "@/lib/order-repair";
 import { NextResponse } from "next/server";
 
 const ACCESSORY_CATEGORIES = new Set([
@@ -134,7 +135,7 @@ export async function GET() {
       );
     }
 
-    const orders = await prisma.order.findMany({
+    let orders = await prisma.order.findMany({
       where: { residentId: session.user.id },
       include: {
         items: { include: { product: true, window: true } },
@@ -142,6 +143,21 @@ export async function GET() {
       },
       orderBy: { createdAt: "desc" },
     });
+
+    const repaired = await repairDraftOrders(
+      orders.filter((order) => order.status === "DRAFT").map((order) => order.id)
+    );
+
+    if (repaired) {
+      orders = await prisma.order.findMany({
+        where: { residentId: session.user.id },
+        include: {
+          items: { include: { product: true, window: true } },
+          apartment: { include: { building: true } },
+        },
+        orderBy: { createdAt: "desc" },
+      });
+    }
 
     return NextResponse.json(orders);
   } catch (error) {

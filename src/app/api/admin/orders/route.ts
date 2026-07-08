@@ -1,5 +1,6 @@
 import { auth, isAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { repairDraftOrders } from "@/lib/order-repair";
 import { getWindowTypeLabel } from "@/lib/pricing";
 import { NextResponse } from "next/server";
 
@@ -20,7 +21,7 @@ export async function GET() {
     }
 
     // Pagination: max 100 Bestellungen pro Request
-    const orders = await prisma.order.findMany({
+    let orders = await prisma.order.findMany({
       take: 100,
       include: {
         resident: {
@@ -65,6 +66,58 @@ export async function GET() {
       },
       orderBy: { createdAt: "desc" },
     });
+
+    const repaired = await repairDraftOrders(
+      orders.filter((order) => order.status === "DRAFT").map((order) => order.id)
+    );
+
+    if (repaired) {
+      orders = await prisma.order.findMany({
+        take: 100,
+        include: {
+          resident: {
+            select: {
+              firstName: true,
+              lastName: true,
+              email: true,
+              phone: true,
+            },
+          },
+          apartment: {
+            include: {
+              building: {
+                select: {
+                  houseNumber: true,
+                },
+              },
+            },
+          },
+          items: {
+            include: {
+              product: {
+                select: {
+                  id: true,
+                  name: true,
+                  category: true,
+                  unitPrice: true,
+                },
+              },
+              window: {
+                select: {
+                  id: true,
+                  windowNumber: true,
+                  location: true,
+                  widthMm: true,
+                  heightMm: true,
+                  rekordTypeNew: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      });
+    }
 
     // Berechne detaillierte Preise pro Bestellung
     const ordersWithDetails = orders.map((order) => {
