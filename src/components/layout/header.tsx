@@ -5,6 +5,7 @@ import { signOut, useSession } from "next-auth/react";
 import { LogOut, User, Shield, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 
 interface HeaderProps {
   showNav?: boolean;
@@ -52,6 +53,7 @@ export function Header({ showNav = false, onMenuToggle, menuOpen }: HeaderProps)
 
         {/* User Menu */}
         <div className="flex items-center gap-3">
+          <ThemeToggle />
           {session?.user ? (
             <div className="relative">
               <Button

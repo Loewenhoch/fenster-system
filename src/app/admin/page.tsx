@@ -20,16 +20,16 @@ export default async function AdminDashboard() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-[#1e3a5f]">Admin Dashboard</h1>
+      <h1 className="text-3xl font-bold text-primary">Admin Dashboard</h1>
 
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">Wohnungen</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Wohnungen</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
-              <Home className="h-5 w-5 text-[#1e3a5f]" />
+              <Home className="h-5 w-5 text-primary" />
               <span className="text-3xl font-bold">{apartments}</span>
             </div>
           </CardContent>
@@ -37,11 +37,11 @@ export default async function AdminDashboard() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">Eigentümer</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Eigentümer</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-[#1e3a5f]" />
+              <Users className="h-5 w-5 text-primary" />
               <span className="text-3xl font-bold">{residents}</span>
             </div>
           </CardContent>
@@ -49,11 +49,11 @@ export default async function AdminDashboard() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">Bestellungen</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Bestellungen</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
-              <ShoppingCart className="h-5 w-5 text-[#e67e22]" />
+              <ShoppingCart className="h-5 w-5 text-accent" />
               <span className="text-3xl font-bold">{orders}</span>
             </div>
           </CardContent>
@@ -61,11 +61,11 @@ export default async function AdminDashboard() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">Bestätigt</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Bestätigt</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-600" />
+              <CheckCircle className="h-5 w-5 text-success" />
               <span className="text-3xl font-bold">{confirmedOrders}</span>
             </div>
           </CardContent>
@@ -80,21 +80,21 @@ export default async function AdminDashboard() {
           <CardContent className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-600" /> Bestätigt
+                <CheckCircle className="h-4 w-4 text-success" /> Bestätigt
               </span>
-              <Badge className="bg-green-100 text-green-800">{confirmedOrders}</Badge>
+              <Badge className="bg-success/15 text-success">{confirmedOrders}</Badge>
             </div>
             <div className="flex items-center justify-between">
               <span className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-yellow-600" /> In Bearbeitung / Entwurf
+                <Clock className="h-4 w-4 text-warning" /> In Bearbeitung / Entwurf
               </span>
-              <Badge className="bg-yellow-100 text-yellow-800">{pendingOrders}</Badge>
+              <Badge className="bg-warning/15 text-warning">{pendingOrders}</Badge>
             </div>
             <div className="flex items-center justify-between">
               <span className="flex items-center gap-2">
-                <XCircle className="h-4 w-4 text-gray-400" /> Nicht bestellt
+                <XCircle className="h-4 w-4 text-muted-foreground" /> Nicht bestellt
               </span>
-              <Badge className="bg-gray-100 text-gray-800">{apartments - confirmedOrders}</Badge>
+              <Badge className="bg-muted text-muted-foreground">{apartments - confirmedOrders}</Badge>
             </div>
           </CardContent>
         </Card>

@@ -7,8 +7,18 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Search, Home } from "lucide-react";
 
+interface AdminApartment {
+  id: string;
+  topNumber: string;
+  floor: string;
+  building: { houseNumber: string };
+  residentLinks?: unknown[];
+  windows: unknown[];
+  orders: Array<{ status: string }>;
+}
+
 export default function AdminWohnungenPage() {
-  const [apartments, setApartments] = useState<any[]>([]);
+  const [apartments, setApartments] = useState<AdminApartment[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -27,7 +37,7 @@ export default function AdminWohnungenPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-[#1e3a5f]">Wohnungen</h1>
+      <h1 className="text-3xl font-bold text-primary">Wohnungen</h1>
 
       <Card>
         <CardHeader>
@@ -38,7 +48,7 @@ export default function AdminWohnungenPage() {
         </CardHeader>
         <CardContent>
           <div className="mb-4 flex items-center gap-2">
-            <Search className="h-4 w-4 text-gray-400" />
+            <Search className="h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Suchen nach Top, Stockwerk, Haus..."
               value={search}
@@ -48,7 +58,7 @@ export default function AdminWohnungenPage() {
           </div>
 
           {loading ? (
-            <p className="text-gray-500">Laden...</p>
+            <p className="text-muted-foreground">Laden...</p>
           ) : (
             <Table>
               <TableHeader>
@@ -63,7 +73,7 @@ export default function AdminWohnungenPage() {
               </TableHeader>
               <TableBody>
                 {filtered.map((a) => {
-                  const hasOrder = a.orders.some((o: any) => o.status === "CONFIRMED");
+                  const hasOrder = a.orders.some((o) => o.status === "CONFIRMED");
                   return (
                     <TableRow key={a.id}>
                       <TableCell>{a.building.houseNumber}</TableCell>
@@ -73,7 +83,7 @@ export default function AdminWohnungenPage() {
                       <TableCell>{a.windows.length}</TableCell>
                       <TableCell>
                         {hasOrder ? (
-                          <Badge className="bg-green-100 text-green-800">Bestellt</Badge>
+                          <Badge className="bg-success/15 text-success">Bestellt</Badge>
                         ) : (
                           <Badge variant="outline">Offen</Badge>
                         )}

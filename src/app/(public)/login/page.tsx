@@ -42,16 +42,16 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl text-[#1e3a5f]">Sonnenschutz</CardTitle>
+          <CardTitle className="text-2xl text-primary">Sonnenschutz</CardTitle>
           <CardDescription>Starhembergstraße 64/66, Linz</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-              <div className="flex items-center gap-2 text-red-600 bg-red-50 p-3 rounded-lg text-sm">
+              <div className="flex items-center gap-2 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
                 <AlertCircle className="h-4 w-4" />
                 {error}
               </div>
@@ -86,14 +86,15 @@ export default function LoginPage() {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full h-14 text-lg bg-[#e67e22] hover:bg-[#d35400] text-white"
+              variant="accent"
+              className="h-14 w-full text-lg"
             >
               {loading ? "Bitte warten..." : "Anmelden"}
             </Button>
 
-            <div className="text-center text-sm text-gray-500">
+            <div className="text-center text-sm text-muted-foreground">
               <p>Bei Problemen wenden Sie sich bitte an die Stadt/Hausverwaltung.</p>
-              <p className="mt-1 font-medium text-gray-600">DI Platzer ZT GmbH</p>
+              <p className="mt-1 font-medium text-foreground">DI Platzer ZT GmbH</p>
               <p>Telefon: 0732 7810220</p>
               <p>E-Mail: zt@platzer.co.at</p>
             </div>

@@ -320,7 +320,7 @@ export default function BestellungBestaetigungPage() {
           </CardHeader>
           <CardContent className="space-y-6">
             {error && (
-              <div className="flex items-center gap-2 text-red-600 bg-red-50 p-3 rounded-lg text-sm">
+              <div className="flex items-center gap-2 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
                 <AlertCircle className="h-4 w-4" />
                 {error}
               </div>

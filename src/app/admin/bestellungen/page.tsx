@@ -335,7 +335,7 @@ export default function AdminBestellungenPage() {
         </CardHeader>
         <CardContent>
           <div className="mb-4 flex items-center gap-2">
-            <Search className="h-4 w-4 text-gray-400" />
+            <Search className="h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Suchen nach Name, Top, Status..."
               value={search}
@@ -345,7 +345,7 @@ export default function AdminBestellungenPage() {
           </div>
 
           {loading ? (
-            <p className="text-gray-500">Laden...</p>
+            <p className="text-muted-foreground">Laden...</p>
           ) : (
             <div className="overflow-x-auto">
               <Table>

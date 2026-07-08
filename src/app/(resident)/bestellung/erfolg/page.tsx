@@ -7,18 +7,25 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, FileText, Home } from "lucide-react";
 
+interface OrderSummary {
+  id: string;
+  createdAt: string;
+  totalNet: number;
+  items: unknown[];
+}
+
 export default function BestellungErfolgPage() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get("orderId");
-  const [order, setOrder] = useState<any>(null);
+  const [order, setOrder] = useState<OrderSummary | null>(null);
 
   useEffect(() => {
     if (orderId) {
       fetch("/api/orders")
         .then((r) => r.json())
-        .then((orders) => {
-          const o = orders.find((x: any) => x.id === orderId);
-          setOrder(o);
+        .then((orders: OrderSummary[]) => {
+          const o = orders.find((x) => x.id === orderId);
+          setOrder(o ?? null);
         });
     }
   }, [orderId]);
@@ -26,9 +33,9 @@ export default function BestellungErfolgPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="text-center space-y-3">
-        <CheckCircle className="h-16 w-16 text-green-600 mx-auto" />
-        <h1 className="text-3xl font-bold text-[#1e3a5f]">Bestellung erfolgreich!</h1>
-        <p className="text-gray-600 text-lg">
+        <CheckCircle className="mx-auto h-16 w-16 text-success" />
+        <h1 className="text-3xl font-bold text-primary">Bestellung erfolgreich!</h1>
+        <p className="text-lg text-muted-foreground">
           Vielen Dank für Ihre verbindliche Bestellung.
         </p>
       </div>
@@ -39,25 +46,25 @@ export default function BestellungErfolgPage() {
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex justify-between">
-            <span className="text-gray-600">Bestellnummer:</span>
+            <span className="text-muted-foreground">Bestellnummer:</span>
             <span className="font-medium">{orderId}</span>
           </div>
           {order && (
             <>
               <div className="flex justify-between">
-                <span className="text-gray-600">Datum:</span>
+                <span className="text-muted-foreground">Datum:</span>
                 <span className="font-medium">
                   {new Date(order.createdAt).toLocaleDateString("de-DE")}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Gesamtsumme (netto):</span>
-                <span className="font-medium text-[#1e3a5f]">
+                <span className="text-muted-foreground">Gesamtsumme (netto):</span>
+                <span className="font-medium text-primary">
                   {order.totalNet.toFixed(2)} €
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Positionen:</span>
+                <span className="text-muted-foreground">Positionen:</span>
                 <span className="font-medium">{order.items.length}</span>
               </div>
             </>
@@ -73,7 +80,7 @@ export default function BestellungErfolgPage() {
           </Button>
         </Link>
         <Link href="/bestellung">
-          <Button className="w-full h-14 text-lg gap-2 bg-[#1e3a5f] hover:bg-[#152d4a]">
+          <Button className="h-14 w-full gap-2 text-lg">
             <FileText className="h-5 w-5" />
             Bestellung ansehen
           </Button>

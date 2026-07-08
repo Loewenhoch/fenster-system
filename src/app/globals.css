@@ -45,6 +45,44 @@
 }
 
 @layer base {
+  .dark {
+    color-scheme: dark;
+
+    --color-background: #111315;
+    --color-foreground: #f4f1ea;
+
+    --color-card: #1a1d20;
+    --color-card-foreground: #f4f1ea;
+
+    --color-popover: #202327;
+    --color-popover-foreground: #f4f1ea;
+
+    --color-primary: #315f85;
+    --color-primary-foreground: #f8fafc;
+
+    --color-secondary: #252a2f;
+    --color-secondary-foreground: #e9edf0;
+
+    --color-muted: #24282d;
+    --color-muted-foreground: #b7c0c8;
+
+    --color-accent: #f09a3e;
+    --color-accent-foreground: #1b1208;
+
+    --color-destructive: #f07167;
+    --color-destructive-foreground: #1d0807;
+
+    --color-success: #4cc17a;
+    --color-success-foreground: #07170d;
+
+    --color-warning: #f5bd45;
+    --color-warning-foreground: #1f1705;
+
+    --color-border: #3a424a;
+    --color-input: #4a535c;
+    --color-ring: #f09a3e;
+  }
+
   html {
     font-size: 18px;
     -webkit-font-smoothing: antialiased;
@@ -130,6 +168,10 @@
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
     background-color: var(--color-card);
+  }
+
+  .dark .card-elevated {
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
   }
 
   .input-lg {
