@@ -93,7 +93,7 @@ export default function LoginPage() {
             </Button>
 
             <div className="text-center text-sm text-muted-foreground">
-              <p>Bei Problemen wenden Sie sich bitte an die Stadt/Hausverwaltung.</p>
+              <p>Bei Problemen wenden Sie sich bitte an DI Platzer.</p>
               <p className="mt-1 font-medium text-foreground">DI Platzer ZT GmbH</p>
               <p>Telefon: 0732 7810220</p>
               <p>E-Mail: zt@platzer.co.at</p>
