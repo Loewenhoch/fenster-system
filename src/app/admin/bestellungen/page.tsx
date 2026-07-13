@@ -25,6 +25,7 @@ import {
   CheckCircle2,
   Eye,
   Package,
+  Printer,
   Save,
   Search,
   ShoppingCart,
@@ -101,6 +102,7 @@ export default function AdminBestellungenPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [printMode, setPrintMode] = useState<"all" | "confirmed" | null>(null);
   const [statusDrafts, setStatusDrafts] = useState<Record<string, string>>({});
   const [nameDrafts, setNameDrafts] = useState<Record<string, string>>({});
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -142,6 +144,12 @@ export default function AdminBestellungenPage() {
     return () => window.clearTimeout(timer);
   }, [loadOrders]);
 
+  useEffect(() => {
+    const resetPrintMode = () => setPrintMode(null);
+    window.addEventListener("afterprint", resetPrintMode);
+    return () => window.removeEventListener("afterprint", resetPrintMode);
+  }, []);
+
   const filtered = useMemo(() => {
     const normalizedSearch = search.toLowerCase();
     return orders.filter((o) =>
@@ -154,6 +162,14 @@ export default function AdminBestellungenPage() {
 
   const formatPrice = (n: number | null | undefined) =>
     ((n ?? 0).toFixed(2).replace(".", ",") + " €");
+
+  const formatDate = (date: string | null | undefined) =>
+    date ? new Date(date).toLocaleDateString("de-DE") : "–";
+
+  const residentName = (order: Order) =>
+    [order.resident?.firstName, order.resident?.lastName]
+      .filter(Boolean)
+      .join(" ") || "Unbekannt";
 
   const statusLabel = (status: string) => {
     if (status === "CONFIRMED") return "Bestätigt";
@@ -212,12 +228,35 @@ export default function AdminBestellungenPage() {
   }, [filtered]);
 
   const confirmedCount = filtered.filter((order) => order.status === "CONFIRMED").length;
+  const allConfirmedCount = orders.filter(
+    (order) => order.status === "CONFIRMED"
+  ).length;
   const filteredGrossTotal = filtered
     .filter((order) => order.status === "CONFIRMED")
     .reduce(
     (sum, order) => sum + order.totalGross,
     0
   );
+
+  const printOrders = useMemo(() => {
+    if (!printMode) return [];
+    if (printMode === "confirmed") {
+      return orders.filter((order) => order.status === "CONFIRMED");
+    }
+    return orders;
+  }, [orders, printMode]);
+
+  const printGrossTotal = printOrders.reduce(
+    (sum, order) => sum + order.totalGross,
+    0
+  );
+
+  const printOrdersList = (mode: "all" | "confirmed") => {
+    setPrintMode(mode);
+    window.setTimeout(() => {
+      window.print();
+    }, 0);
+  };
 
   const updateOrder = async (orderId: string) => {
     setSavingId(orderId);
@@ -328,10 +367,34 @@ export default function AdminBestellungenPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <ShoppingCart className="h-5 w-5" />
-            Alle Bestellungen
-          </CardTitle>
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <ShoppingCart className="h-5 w-5" />
+              Alle Bestellungen
+            </CardTitle>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button
+                type="button"
+                variant="outline"
+                className="gap-2"
+                disabled={loading || orders.length === 0}
+                onClick={() => printOrdersList("all")}
+              >
+                <Printer className="size-4" />
+                Alle Bestellungen ausdrucken
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="gap-2"
+                disabled={loading || allConfirmedCount === 0}
+                onClick={() => printOrdersList("confirmed")}
+              >
+                <Printer className="size-4" />
+                Alle bestätigten Bestellungen ausdrucken
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="mb-4 flex items-center gap-2">
@@ -638,6 +701,142 @@ export default function AdminBestellungenPage() {
           )}
         </CardContent>
       </Card>
+
+      {printMode && (
+        <div className="print-area fixed left-[-10000px] top-0 w-full bg-background print:static">
+          <div className="space-y-5 text-sm text-foreground">
+            <div>
+              <h1 className="text-2xl font-bold text-primary">
+                {printMode === "confirmed"
+                  ? "Bestätigte Bestellungen"
+                  : "Alle Bestellungen"}
+              </h1>
+              <p className="text-muted-foreground">
+                Ausdruck vom {new Date().toLocaleDateString("de-DE")} ·{" "}
+                {printOrders.length} Bestellung
+                {printOrders.length !== 1 ? "en" : ""} · Summe brutto{" "}
+                {formatPrice(printGrossTotal)}
+              </p>
+            </div>
+
+            <table className="w-full border-collapse text-xs">
+              <thead>
+                <tr className="border-b">
+                  <th className="py-2 pr-2 text-left">Nr.</th>
+                  <th className="py-2 pr-2 text-left">Eigentümer</th>
+                  <th className="py-2 pr-2 text-left">Wohnung</th>
+                  <th className="py-2 pr-2 text-left">Status</th>
+                  <th className="py-2 pr-2 text-left">Datum</th>
+                  <th className="py-2 pr-2 text-right">Netto</th>
+                  <th className="py-2 text-right">Brutto</th>
+                </tr>
+              </thead>
+              <tbody>
+                {printOrders.map((order) => (
+                  <tr key={order.id} className="border-b align-top">
+                    <td className="py-2 pr-2 font-medium">
+                      {order.id.slice(0, 8)}
+                    </td>
+                    <td className="py-2 pr-2">
+                      {residentName(order)}
+                      {order.resident?.email && (
+                        <div className="text-[10px] text-muted-foreground">
+                          {order.resident.email}
+                        </div>
+                      )}
+                    </td>
+                    <td className="py-2 pr-2">
+                      Haus {order.apartment.building.houseNumber},{" "}
+                      {order.apartment.topNumber}
+                    </td>
+                    <td className="py-2 pr-2">{statusLabel(order.status)}</td>
+                    <td className="py-2 pr-2">
+                      {formatDate(order.confirmedAt ?? order.createdAt)}
+                    </td>
+                    <td className="py-2 pr-2 text-right">
+                      {formatPrice(order.totalNet)}
+                    </td>
+                    <td className="py-2 text-right">
+                      {formatPrice(order.totalGross)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <div className="space-y-4">
+              {printOrders.map((order) => (
+                <div key={`detail-${order.id}`} className="break-inside-avoid border-t pt-3">
+                  <div className="mb-2 flex items-start justify-between gap-4">
+                    <div>
+                      <h2 className="text-base font-semibold text-primary">
+                        {residentName(order)} · Haus{" "}
+                        {order.apartment.building.houseNumber},{" "}
+                        {order.apartment.topNumber}
+                      </h2>
+                      <p className="text-xs text-muted-foreground">
+                        Bestellung #{order.id.slice(0, 8)} ·{" "}
+                        {statusLabel(order.status)} ·{" "}
+                        {formatDate(order.confirmedAt ?? order.createdAt)}
+                      </p>
+                    </div>
+                    <div className="text-right text-xs">
+                      <div>Netto: {formatPrice(order.totalNet)}</div>
+                      <div className="font-semibold">
+                        Brutto: {formatPrice(order.totalGross)}
+                      </div>
+                    </div>
+                  </div>
+
+                  <table className="w-full border-collapse text-[11px]">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="py-1 pr-2 text-left">Produkt</th>
+                        <th className="py-1 pr-2 text-left">Fenster</th>
+                        <th className="py-1 pr-2 text-right">Material</th>
+                        <th className="py-1 pr-2 text-right">Montage</th>
+                        <th className="py-1 text-right">Gesamt</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {order.items.map((item) => (
+                        <tr key={item.id} className="border-b align-top">
+                          <td className="py-1 pr-2">{item.product.name}</td>
+                          <td className="py-1 pr-2">
+                            {item.window
+                              ? `${item.window.windowNumber} · ${
+                                  item.windowTypeLabel ?? "Typ unbekannt"
+                                }`
+                              : "–"}
+                            {item.quantity > 1 ? ` · ${item.quantity} Stk.` : ""}
+                          </td>
+                          <td className="py-1 pr-2 text-right">
+                            {formatPrice(item.totalPrice)}
+                          </td>
+                          <td className="py-1 pr-2 text-right">
+                            {item.installationFee + item.manipulationFee > 0
+                              ? formatPrice(
+                                  item.installationFee + item.manipulationFee
+                                )
+                              : "–"}
+                          </td>
+                          <td className="py-1 text-right">
+                            {formatPrice(
+                              item.totalPrice +
+                                item.installationFee +
+                                item.manipulationFee
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
