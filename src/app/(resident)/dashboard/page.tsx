@@ -105,6 +105,7 @@ export default async function DashboardPage() {
                 ],
               },
               orders: {
+                where: { residentId: session.user.id },
                 orderBy: { createdAt: "desc" },
                 take: 1,
                 include: { items: true },
