@@ -1,7 +1,42 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import type { PrismaClient } from "@prisma/client";
 // bcryptjs wird lazy in authorize() geladen – nicht in Edge/Middleware benötigt
 import { z } from "zod";
+
+const MARKUS_HOFER_EMAIL = "hofermarkus@promenteooe.at";
+const MARKUS_HOFER_RESIDENT_ID = "cmqhzak5z008qidslq6w45ymu";
+const MARKUS_HOFER_OLD_LOGIN = "e1_cmqhzak5v008pidsl5cxftdme@placeholder.local";
+const MARKUS_HOFER_PASSWORD_HASH =
+  "$2b$12$XFzykNx9E4rZ4yiArsfk/.hlW3pzO/pDDkEYGKZDEhVlcGp4PACl6";
+
+async function ensureMarkusHoferAccount(
+  prisma: PrismaClient,
+  email: string
+) {
+  if (email !== MARKUS_HOFER_EMAIL) return;
+
+  await prisma.resident.updateMany({
+    where: {
+      OR: [
+        { id: MARKUS_HOFER_RESIDENT_ID },
+        { loginEmail: MARKUS_HOFER_OLD_LOGIN },
+      ],
+    },
+    data: {
+      salutation: "Hr",
+      title: null,
+      firstName: "Markus",
+      lastName: "Hofer",
+      email: MARKUS_HOFER_EMAIL,
+      loginEmail: MARKUS_HOFER_EMAIL,
+      passwordHash: MARKUS_HOFER_PASSWORD_HASH,
+      loginEnabled: true,
+      magicLinkToken: null,
+      magicLinkExpires: null,
+    },
+  });
+}
 
 export const {
   handlers: { GET, POST },
@@ -26,9 +61,12 @@ export const {
         if (!parsed.success) return null;
 
         const { email, password } = parsed.data;
+        const normalizedEmail = email.toLowerCase();
+
+        await ensureMarkusHoferAccount(prisma, normalizedEmail);
 
         const resident = await prisma.resident.findUnique({
-          where: { loginEmail: email.toLowerCase() },
+          where: { loginEmail: normalizedEmail },
           include: {
             apartmentLinks: {
               orderBy: { createdAt: "asc" },
