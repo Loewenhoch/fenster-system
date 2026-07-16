@@ -35,6 +35,16 @@ const ACCOUNT_FIXES = [
     passwordHash:
       "$2b$12$wvvnzUl32dQCEs5nSwEzMu4fjHuibPFmIeemn8Z5alEW1PEfUd51q",
   },
+  {
+    email: "i.gassner@gmx.at",
+    residentId: "cmqhzakbk00abidsl6wpxo144",
+    oldLoginEmail: "e2_cmqhzakb000a7idslva4pf1yn@placeholder.local",
+    salutation: "Fr",
+    firstName: "Ingrid",
+    lastName: "Gaßner",
+    passwordHash:
+      "$2b$12$8x6atkRowllvUVTx/gaRlO.cneibh8K1PfwUz8f4JzP4fBX0ADDkC",
+  },
 ] as const;
 
 async function ensureForgottenResidentAccount(
