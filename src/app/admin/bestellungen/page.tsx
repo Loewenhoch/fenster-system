@@ -153,6 +153,32 @@ export default function AdminBestellungenPage() {
     return () => window.removeEventListener("afterprint", resetPrintMode);
   }, []);
 
+  const sortOrders = useCallback(
+    (orderList: Order[]) =>
+      [...orderList].sort((a, b) => {
+        if (sortMode === "last-name-asc") {
+          const lastNameCompare = (a.resident?.lastName ?? "").localeCompare(
+            b.resident?.lastName ?? "",
+            "de",
+            { sensitivity: "base" }
+          );
+          if (lastNameCompare !== 0) return lastNameCompare;
+
+          const firstNameCompare = (a.resident?.firstName ?? "").localeCompare(
+            b.resident?.firstName ?? "",
+            "de",
+            { sensitivity: "base" }
+          );
+          if (firstNameCompare !== 0) return firstNameCompare;
+        }
+
+        return (
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+      }),
+    [sortMode]
+  );
+
   const filtered = useMemo(() => {
     const normalizedSearch = search.toLowerCase();
     const nextFiltered = orders.filter((o) =>
@@ -162,28 +188,8 @@ export default function AdminBestellungenPage() {
       o.status.toLowerCase().includes(normalizedSearch)
     );
 
-    return nextFiltered.sort((a, b) => {
-      if (sortMode === "last-name-asc") {
-        const lastNameCompare = (a.resident?.lastName ?? "").localeCompare(
-          b.resident?.lastName ?? "",
-          "de",
-          { sensitivity: "base" }
-        );
-        if (lastNameCompare !== 0) return lastNameCompare;
-
-        const firstNameCompare = (a.resident?.firstName ?? "").localeCompare(
-          b.resident?.firstName ?? "",
-          "de",
-          { sensitivity: "base" }
-        );
-        if (firstNameCompare !== 0) return firstNameCompare;
-      }
-
-      return (
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
-    });
-  }, [orders, search, sortMode]);
+    return sortOrders(nextFiltered);
+  }, [orders, search, sortOrders]);
 
   const formatPrice = (n: number | null | undefined) =>
     ((n ?? 0).toFixed(2).replace(".", ",") + " €");
@@ -265,11 +271,12 @@ export default function AdminBestellungenPage() {
 
   const printOrders = useMemo(() => {
     if (!printMode) return [];
+    const sortedOrders = sortOrders(orders);
     if (printMode === "confirmed") {
-      return orders.filter((order) => order.status === "CONFIRMED");
+      return sortedOrders.filter((order) => order.status === "CONFIRMED");
     }
-    return orders;
-  }, [orders, printMode]);
+    return sortedOrders;
+  }, [orders, printMode, sortOrders]);
 
   const printGrossTotal = printOrders.reduce(
     (sum, order) => sum + order.totalGross,
