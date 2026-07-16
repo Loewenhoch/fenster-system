@@ -98,9 +98,12 @@ interface Order {
   };
 }
 
+type SortMode = "date-desc" | "last-name-asc";
+
 export default function AdminBestellungenPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [search, setSearch] = useState("");
+  const [sortMode, setSortMode] = useState<SortMode>("date-desc");
   const [loading, setLoading] = useState(true);
   const [printMode, setPrintMode] = useState<"all" | "confirmed" | null>(null);
   const [statusDrafts, setStatusDrafts] = useState<Record<string, string>>({});
@@ -152,13 +155,35 @@ export default function AdminBestellungenPage() {
 
   const filtered = useMemo(() => {
     const normalizedSearch = search.toLowerCase();
-    return orders.filter((o) =>
+    const nextFiltered = orders.filter((o) =>
       (o.resident?.firstName || "").toLowerCase().includes(normalizedSearch) ||
       (o.resident?.lastName || "").toLowerCase().includes(normalizedSearch) ||
       o.apartment.topNumber.toLowerCase().includes(normalizedSearch) ||
       o.status.toLowerCase().includes(normalizedSearch)
     );
-  }, [orders, search]);
+
+    return nextFiltered.sort((a, b) => {
+      if (sortMode === "last-name-asc") {
+        const lastNameCompare = (a.resident?.lastName ?? "").localeCompare(
+          b.resident?.lastName ?? "",
+          "de",
+          { sensitivity: "base" }
+        );
+        if (lastNameCompare !== 0) return lastNameCompare;
+
+        const firstNameCompare = (a.resident?.firstName ?? "").localeCompare(
+          b.resident?.firstName ?? "",
+          "de",
+          { sensitivity: "base" }
+        );
+        if (firstNameCompare !== 0) return firstNameCompare;
+      }
+
+      return (
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+    });
+  }, [orders, search, sortMode]);
 
   const formatPrice = (n: number | null | undefined) =>
     ((n ?? 0).toFixed(2).replace(".", ",") + " €");
@@ -397,14 +422,27 @@ export default function AdminBestellungenPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="mb-4 flex items-center gap-2">
-            <Search className="h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Suchen nach Name, Top, Status..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="max-w-md"
-            />
+          <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex items-center gap-2">
+              <Search className="h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Suchen nach Name, Top, Status..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="max-w-md"
+              />
+            </div>
+            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+              Sortieren
+              <select
+                value={sortMode}
+                onChange={(event) => setSortMode(event.target.value as SortMode)}
+                className="h-10 rounded-md border border-input bg-background px-3 text-sm font-medium text-foreground"
+              >
+                <option value="date-desc">Datum: neueste zuerst</option>
+                <option value="last-name-asc">Nachname: A-Z</option>
+              </select>
+            </label>
           </div>
 
           {loading ? (
