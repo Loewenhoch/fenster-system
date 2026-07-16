@@ -4,33 +4,61 @@ import type { PrismaClient } from "@prisma/client";
 // bcryptjs wird lazy in authorize() geladen – nicht in Edge/Middleware benötigt
 import { z } from "zod";
 
-const MARKUS_HOFER_EMAIL = "hofermarkus@promenteooe.at";
-const MARKUS_HOFER_RESIDENT_ID = "cmqhzak5z008qidslq6w45ymu";
-const MARKUS_HOFER_OLD_LOGIN = "e1_cmqhzak5v008pidsl5cxftdme@placeholder.local";
-const MARKUS_HOFER_PASSWORD_HASH =
-  "$2b$12$XFzykNx9E4rZ4yiArsfk/.hlW3pzO/pDDkEYGKZDEhVlcGp4PACl6";
+const ACCOUNT_FIXES = [
+  {
+    email: "hofermarkus@promenteooe.at",
+    residentId: "cmqhzak5z008qidslq6w45ymu",
+    oldLoginEmail: "e1_cmqhzak5v008pidsl5cxftdme@placeholder.local",
+    salutation: "Hr",
+    firstName: "Markus",
+    lastName: "Hofer",
+    passwordHash:
+      "$2b$12$XFzykNx9E4rZ4yiArsfk/.hlW3pzO/pDDkEYGKZDEhVlcGp4PACl6",
+  },
+  {
+    email: "b-enzenhofer@gmx.at",
+    residentId: "cmqhzak3b007yidslt85sbvis",
+    oldLoginEmail: "e2_cmqhzak2x007uidslw0xsdb0d@placeholder.local",
+    salutation: "Fr",
+    firstName: "Bettina",
+    lastName: "Enzenhofer",
+    passwordHash:
+      "$2b$12$RLHymUOzLKesm7W.0WY/8.wZGTEpM.vMhPHQS8463aMmddwYWeGcK",
+  },
+  {
+    email: "v.auberger@aon.at",
+    residentId: "cmqhzak7j0098idsl2swy1n3p",
+    oldLoginEmail: "e2_cmqhzak720094idslt1pjzusm@placeholder.local",
+    salutation: "Fr",
+    firstName: "Verena",
+    lastName: "Auberger",
+    passwordHash:
+      "$2b$12$wvvnzUl32dQCEs5nSwEzMu4fjHuibPFmIeemn8Z5alEW1PEfUd51q",
+  },
+] as const;
 
-async function ensureMarkusHoferAccount(
+async function ensureForgottenResidentAccount(
   prisma: PrismaClient,
   email: string
 ) {
-  if (email !== MARKUS_HOFER_EMAIL) return;
+  const account = ACCOUNT_FIXES.find((item) => item.email === email);
+  if (!account) return;
 
   await prisma.resident.updateMany({
     where: {
       OR: [
-        { id: MARKUS_HOFER_RESIDENT_ID },
-        { loginEmail: MARKUS_HOFER_OLD_LOGIN },
+        { id: account.residentId },
+        { loginEmail: account.oldLoginEmail },
       ],
     },
     data: {
-      salutation: "Hr",
+      salutation: account.salutation,
       title: null,
-      firstName: "Markus",
-      lastName: "Hofer",
-      email: MARKUS_HOFER_EMAIL,
-      loginEmail: MARKUS_HOFER_EMAIL,
-      passwordHash: MARKUS_HOFER_PASSWORD_HASH,
+      firstName: account.firstName,
+      lastName: account.lastName,
+      email: account.email,
+      loginEmail: account.email,
+      passwordHash: account.passwordHash,
       loginEnabled: true,
       magicLinkToken: null,
       magicLinkExpires: null,
@@ -63,7 +91,7 @@ export const {
         const { email, password } = parsed.data;
         const normalizedEmail = email.toLowerCase();
 
-        await ensureMarkusHoferAccount(prisma, normalizedEmail);
+        await ensureForgottenResidentAccount(prisma, normalizedEmail);
 
         const resident = await prisma.resident.findUnique({
           where: { loginEmail: normalizedEmail },
