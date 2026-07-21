@@ -33,18 +33,21 @@ export function getApartmentPlanLinks(
 ): PlanLink[] {
   const floorKey = normalizeFloorForPlan(floor);
   if (!floorKey) return [];
+  const hasZwischengeschoss = houseNumber === "66" && floor.toLowerCase().includes("zg");
 
-  const links: PlanLink[] = [
-    {
+  const links: PlanLink[] = [];
+
+  if (hasZwischengeschoss) {
+    links.push({
+      label: "Grundriss Haus 66 - ZG (Zwischengeschoss)",
+      href: `${PLAN_BASE}/starhembergstrasse-66-gr-zg.pdf`,
+    });
+  }
+
+  if (floorKey !== "zg") {
+    links.push({
       label: `Grundriss Haus ${houseNumber} - ${getFloorLabel(floorKey)}`,
       href: `${PLAN_BASE}/starhembergstrasse-${houseNumber}-gr-${floorKey}.pdf`,
-    },
-  ];
-
-  if (houseNumber === "66" && floor.toLowerCase().includes("zg") && floorKey !== "zg") {
-    links.push({
-      label: "Zwischengeschoss (ZG)",
-      href: `${PLAN_BASE}/starhembergstrasse-66-gr-zg.pdf`,
     });
   }
 
