@@ -20,7 +20,7 @@ const ELECTRIC_EXISTING_SUNSCREEN_WINDOW_IDS = new Set([
 const conflictFieldsByModel: Record<string, string[]> = {
   Apartment: ["buildingId", "topNumber"],
   Building: ["houseNumber"],
-  Resident: ["loginEmail"],
+  Resident: ["id"],
   ResidentApartment: ["residentId", "apartmentId"],
   Settings: ["key"],
 };
