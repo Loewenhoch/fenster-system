@@ -45,6 +45,16 @@ const ACCOUNT_FIXES = [
     passwordHash:
       "$2b$12$8x6atkRowllvUVTx/gaRlO.cneibh8K1PfwUz8f4JzP4fBX0ADDkC",
   },
+  {
+    email: "erika.geistberger@sta-fenster.local",
+    residentId: "cmqhzajls001yidsliw7gdnxm",
+    oldLoginEmail: "e1_cmqhzajll001xidsl7ey67ajt@placeholder.local",
+    salutation: "Fr",
+    firstName: "Erika",
+    lastName: "Geistberger",
+    passwordHash:
+      "$2b$12$2Ews6PmXR3xVomHp1W/DAObZfuxpUVibeaORHzDJbdnX0JIMuU0Ge",
+  },
 ] as const;
 
 async function ensureForgottenResidentAccount(
