@@ -46,9 +46,10 @@ const ACCOUNT_FIXES = [
       "$2b$12$8x6atkRowllvUVTx/gaRlO.cneibh8K1PfwUz8f4JzP4fBX0ADDkC",
   },
   {
-    email: "erika.geistberger@sta-fenster.local",
+    email: "erika.geistberger@sta-fenster.at",
     residentId: "cmqhzajls001yidsliw7gdnxm",
     oldLoginEmail: "e1_cmqhzajll001xidsl7ey67ajt@placeholder.local",
+    aliasEmails: ["erika.geistberger@sta-fenster.local"],
     salutation: "Fr",
     firstName: "Erika",
     lastName: "Geistberger",
@@ -61,14 +62,25 @@ async function ensureForgottenResidentAccount(
   prisma: PrismaClient,
   email: string
 ) {
-  const account = ACCOUNT_FIXES.find((item) => item.email === email);
-  if (!account) return;
+  const account = ACCOUNT_FIXES.find((item) => {
+    if (item.email === email) return true;
+    return (
+      "aliasEmails" in item &&
+      (item.aliasEmails as readonly string[]).includes(email)
+    );
+  });
+  if (!account) return email;
 
   await prisma.resident.updateMany({
     where: {
       OR: [
         { id: account.residentId },
         { loginEmail: account.oldLoginEmail },
+        ...(("aliasEmails" in account)
+          ? (account.aliasEmails as readonly string[]).map((loginEmail) => ({
+              loginEmail,
+            }))
+          : []),
       ],
     },
     data: {
@@ -84,6 +96,8 @@ async function ensureForgottenResidentAccount(
       magicLinkExpires: null,
     },
   });
+
+  return account.email;
 }
 
 export const {
@@ -111,10 +125,13 @@ export const {
         const { email, password } = parsed.data;
         const normalizedEmail = email.toLowerCase();
 
-        await ensureForgottenResidentAccount(prisma, normalizedEmail);
+        const loginEmail = await ensureForgottenResidentAccount(
+          prisma,
+          normalizedEmail
+        );
 
         const resident = await prisma.resident.findUnique({
-          where: { loginEmail: normalizedEmail },
+          where: { loginEmail },
           include: {
             apartmentLinks: {
               orderBy: { createdAt: "asc" },
